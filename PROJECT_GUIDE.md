@@ -1,10 +1,24 @@
-# 知识历险项目说明
+# 非书项目说明
 
-更新日期：2026-05-11
+更新日期：2026-05-12
 
 ## 项目概览
 
-「知识历险」是面向知乎黑客松的 H5/Web 原型。产品从一篇知乎文章、回答、问题或知识内容链接出发，把用户带入一条 10 站的主动阅读路线，并在完成后生成可保存、可分享的知识书单。
+「非书」是面向知乎黑客松的 H5/Web 原型。
+
+产品主 slogan：
+
+```text
+读出自己的书。
+```
+
+产品副标题：
+
+```text
+从一个知乎问题出发，在启发式阅读和主动探索中生成你的知识读本。
+```
+
+「非书」的核心立意是重新设计知乎内容的阅读方式：它不是传统电子书，也不是简单收藏夹，而是一种兴趣驱动、启发引导式的主动阅读体验。用户从一个知乎问题、回答、文章或知识内容链接出发，在一条 10 站探索路线中不断选择下一站，连接更多相关观点和知识，突破熟悉的信息边界，并在完成后生成可保存、可分享、可推荐的个人知识读本。
 
 当前版本为了保证演示稳定，使用 `src/mockData.js` 中的模拟数据完成核心流程展示；真实知乎 OpenAPI 相关能力保留在校验脚本和项目说明中，敏感 Key 只应通过本地环境变量或本地私有配置使用。
 
@@ -17,8 +31,16 @@
 ├── README.md                         # GitHub 首页简介和运行入口
 ├── index.html                        # 本地开发入口
 ├── package.json                      # 项目脚本定义
+├── assets/
+│   ├── feishu-logo.png               # 非书横版品牌 Logo
+│   └── ui/                           # 关键页面 UI 视觉稿图片
+│       ├── feishu-detail-ui.png      # 非书详情页视觉稿
+│       ├── feishu-landing-ui.png     # 落地页视觉稿
+│       └── feishu-library-ui.png     # 我的非书视觉稿
 ├── dist/
 │   └── demo.html                     # 可直接打开的单文件演示版本
+├── docs/
+│   └── UI_VISUALS.md                 # 非书关键页面 UI 视觉稿说明
 ├── scripts/
 │   ├── build-standalone.mjs          # 生成 dist/demo.html
 │   ├── dev-server.mjs                # 启动本地静态开发服务
@@ -26,7 +48,7 @@
 │   └── verify-zhihu-basics.mjs       # URL 解析和签名逻辑的本地冒烟检查
 └── src/
     ├── app.js                        # 单页应用逻辑和界面渲染
-    ├── mockData.js                   # 演示用知识历险路线数据
+    ├── mockData.js                   # 演示用非书探索路线数据
     └── styles.css                    # 页面样式
 ```
 
@@ -34,6 +56,14 @@
 
 - `note/`：黑客松资料、API Key 等敏感或本地参考材料。
 - `.env`、`.env.*`：本地环境变量文件。
+
+本地讨论记录：
+
+- `note/zhihuhackathon/非书项目规划.md`：非书产品定位、MVP 范围、核心玩法、页面结构、数据结构、AI 能力拆分和里程碑规划。
+- `note/zhihuhackathon/非书项目Todo与时间计划.md`：比赛截止前的任务清单、优先级和每日时间计划。
+- `note/zhihuhackathon/非书API验证记录.md`：知乎链接解析、OpenAPI 签名、真实接口探测和当前阻塞记录。
+- `note/zhihuhackathon/非书命名与品牌文案讨论记录.md`：产品命名、slogan 和副标题讨论过程，作为参赛介绍材料的本地参考。
+- `note/zhihuhackathon/工作日志/`：每次重要项目讨论、决策、实现、阻塞和验证结果的本地工作日志目录，适用于所有后续会话。
 
 ## 本地运行
 
@@ -117,7 +147,7 @@ dist
 npm run check
 npm run build:standalone
 git status
-git add README.md PROJECT_GUIDE.md AGENTS.md src scripts dist package.json index.html
+git add README.md PROJECT_GUIDE.md AGENTS.md assets docs src scripts dist package.json index.html
 git commit -m "docs: update project guide"
 git push fitbook master
 ```
@@ -130,8 +160,20 @@ git push fitbook master
 
 ## 本次更新内容
 
+### 2026-05-12
+
+- 新增 `docs/UI_VISUALS.md`，整理非书关键页面 UI 视觉稿，包括落地页、我的非书冷启动/示例路线页和非书详情页。
+- 新增 `assets/ui/`，保存三张关键页面视觉稿：`feishu-landing-ui.png`、`feishu-library-ui.png`、`feishu-detail-ui.png`。
+- 更新 `README.md`，加入关键页面 UI 视觉稿文档入口。
+
 ### 2026-05-11
 
+- 产品命名确定为「非书」，主 slogan 确定为「读出自己的书。」。
+- 产品副标题确定为「从一个知乎问题出发，在启发式阅读和主动探索中生成你的知识读本。」。
+- 产品横版 Logo 定稿并保存为 `assets/feishu-logo.png`，页面导航栏已接入该品牌标识。
+- 项目定位更新为兴趣驱动、启发引导式、主动探索的新型知乎阅读体验，强调通过探索发现突破认知茧房，并将阅读过程沉淀为个人知识读本。
+- 同步更新本地 `note/zhihuhackathon/` 下的主项目文档，将项目规划、Todo 与时间计划、API 验证记录迁移为「非书」命名。
+- 新增本地讨论记录 `note/zhihuhackathon/非书命名与品牌文案讨论记录.md`，该文件位于被 Git 忽略的 `note/` 目录下，不应作为公开提交内容。
 - 新增 `PROJECT_GUIDE.md`，说明项目结构、本地运行、构建、部署和 GitHub 更新流程。
 - 更新 `README.md`，加入完整项目说明文档入口。
 - 更新 `AGENTS.md`，要求后续每次项目变更都同步维护 `PROJECT_GUIDE.md`。
@@ -144,3 +186,4 @@ git push fitbook master
 - 运行命令、构建命令或部署平台变化：更新“本地运行”“构建演示文件”“部署方式”。
 - 新增功能或重要修复：更新“本次更新内容”。
 - 涉及知乎 OpenAPI、密钥、发布、评论、点赞等能力：补充合规说明，并确认敏感信息不进入 Git。
+- 每次有明确项目讨论、产品决策、实现进展、验证结果或阻塞，都要在 `note/zhihuhackathon/工作日志/` 下新增一篇 Markdown 工作日志，命名格式为 `YYYY-MM-DD-HHMM-简短主题.md`。

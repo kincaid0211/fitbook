@@ -1,7 +1,8 @@
 import { adventure, sampleUrl } from "./mockData.js";
 
 const app = document.querySelector("#app");
-const libraryKey = "zhishi-lixian-library";
+const libraryKey = "feishu-library";
+const logoSrc = window.FEISHU_LOGO_SRC || "assets/feishu-logo.png";
 
 const state = {
   view: "landing",
@@ -51,7 +52,7 @@ function makeBook() {
     steps: state.route,
     createdAt: new Date().toLocaleString("zh-CN"),
     preface:
-      "这本知识书单从一篇关于音乐心理学的知乎回答出发，经过情绪、奖赏机制、作品结构、个人记忆、社会审美与认知茧房，最终形成一条由用户选择走出的阅读路线。",
+      "这本非书从一篇关于音乐心理学的知乎回答出发，经过情绪、奖赏机制、作品结构、个人记忆、社会审美与认知茧房，最终形成一条由用户选择生成的启发式阅读路线。",
   };
 }
 
@@ -70,9 +71,9 @@ function sampleBook() {
     style: adventure.style,
     tags: adventure.tags,
     steps: adventure.steps,
-    createdAt: "示例书单",
+    createdAt: "示例非书",
     preface:
-      "这是一条示例知识历险路线，用来展示用户完成 10 站探索后，如何把阅读过程沉淀成类似歌单的知识书单。",
+      "这是一条示例非书路线，用来展示用户完成 10 站探索后，如何把阅读过程沉淀成可保存、可分享的知识读本。",
   };
 }
 
@@ -136,11 +137,11 @@ function finishBook() {
 function nav(active) {
   return `
     <nav class="topbar">
-      <button class="brand-button" data-view="landing"><span class="brand-mark">知</span><span>知识历险</span></button>
+      <button class="brand-button" data-view="landing" aria-label="非书首页"><img class="brand-logo" src="${logoSrc}" alt="非书" /></button>
       <div class="nav-links">
         <button class="${active === "landing" ? "active" : ""}" data-view="landing">首页</button>
-        <button class="${active === "start" ? "active" : ""}" data-view="start">开始历险</button>
-        <button class="${active === "library" ? "active" : ""}" data-view="library">我的书单</button>
+        <button class="${active === "start" ? "active" : ""}" data-view="start">开始探索</button>
+        <button class="${active === "library" ? "active" : ""}" data-view="library">我的非书</button>
       </div>
     </nav>
   `;
@@ -159,11 +160,11 @@ function renderLanding() {
       <div class="landing-hero">
         <div>
           <p class="eyebrow">知乎站内主动学习 demo</p>
-          <h1>从一篇文章出发，走出自己的知识地图</h1>
-          <p class="lead">知识历险把知乎优质内容组织成一场 10 站阅读游戏。每一步都有选择，每一次跳转都有理由，最后生成一张可分享、可评价的知识书单。</p>
+          <h1>读出自己的书。</h1>
+          <p class="lead">非书从一个知乎问题出发，把优质内容组织成一场 10 站启发式阅读。每一步都有选择，每一次跳转都有理由，最后生成可保存、可分享、可评价的知识读本。</p>
           <div class="hero-actions">
-            <button id="hero-start">开始一次历险</button>
-            <button class="ghost-button" id="hero-library">查看我的书单</button>
+            <button id="hero-start">开始一次探索</button>
+            <button class="ghost-button" id="hero-library">查看我的非书</button>
           </div>
         </div>
         <aside class="value-card">
@@ -179,15 +180,15 @@ function renderLanding() {
       <section class="feature-grid" aria-label="核心玩法">
         <article><strong>有限探索</strong><span>10 站封顶，给阅读明确终点和完成感。</span></article>
         <article><strong>知识桥</strong><span>每一步都解释为什么能从上一篇走到下一篇。</span></article>
-        <article><strong>书单化</strong><span>最终生成类似歌单的知识路线，可保存、分享、评价。</span></article>
+        <article><strong>读本化</strong><span>最终生成类似歌单的非书读本，可保存、分享、评价。</span></article>
       </section>
       <section class="landing-flow">
-        <h2>一次知识历险如何发生</h2>
+        <h2>一本非书如何生成</h2>
         <div class="flow-grid">
           <article><span>1</span><strong>粘贴知乎链接</strong><p>从用户正在阅读的一篇内容出发。</p></article>
           <article><span>2</span><strong>选择下一站</strong><p>在深入、跨界、人物、观点挑战中做选择。</p></article>
           <article><span>3</span><strong>完成 10 站</strong><p>走完一条有叙事和关联的阅读路线。</p></article>
-          <article><span>4</span><strong>保存成书单</strong><p>沉淀为一张可分享的知识歌单。</p></article>
+          <article><span>4</span><strong>生成非书</strong><p>沉淀为一份可分享的知识读本。</p></article>
         </div>
       </section>
     </section>
@@ -203,7 +204,7 @@ function renderStart() {
     <section class="screen start-screen">
       ${nav("start")}
       <div class="hero compact-hero">
-        <p class="eyebrow">开始一局新的知识历险</p>
+        <p class="eyebrow">开始一次新的非书探索</p>
         <h1>选择起点</h1>
         <p class="lead">粘贴一篇知乎文章、回答、问题或知识内容链接，AI 会把它变成 10 站探索路线的第一站。</p>
       </div>
@@ -211,7 +212,7 @@ function renderStart() {
         <label for="url-input">粘贴知乎文章链接</label>
         <div class="input-row">
           <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/.../answer/..." />
-          <button type="submit">开始历险</button>
+          <button type="submit">开始探索</button>
         </div>
         <p class="${detectedType ? "hint good" : "hint"}">${detectedType ? `已识别：${detectedType}` : state.selectedDirection || "支持知乎文章、回答、问题和知识内容链接。"}</p>
       </form>
@@ -241,10 +242,10 @@ function renderAdventure() {
         </div>
         <button class="ghost-button" id="restart-button">重新开始</button>
       </header>
-      <section class="progress-panel" aria-label="历险进度">
+      <section class="progress-panel" aria-label="探索进度">
         <div class="progress-copy">
-          <strong>知识历险进度</strong>
-          <span>已完成 ${progressPercent}% · 还差 ${adventure.steps.length - state.currentIndex - 1} 站生成书单</span>
+          <strong>非书生成进度</strong>
+          <span>已完成 ${progressPercent}% · 还差 ${adventure.steps.length - state.currentIndex - 1} 站生成非书</span>
         </div>
         <div class="progress-track"><div style="width: ${progressPercent}%"></div></div>
       </section>
@@ -274,7 +275,7 @@ function renderAdventure() {
                     `,
                   )
                   .join("")}</div>`
-              : `<p class="muted">已抵达第 10 站，可以生成知识书单。</p>`
+              : `<p class="muted">已抵达第 10 站，可以生成非书。</p>`
           }
           ${
             state.selectedDirection && nextStep
@@ -286,7 +287,7 @@ function renderAdventure() {
                 </div>`
               : ""
           }
-          ${state.finished ? `<button id="book-button" class="primary-wide">生成并保存知识书单</button>` : ""}
+          ${state.finished ? `<button id="book-button" class="primary-wide">生成并保存非书</button>` : ""}
         </aside>
       </div>
 
@@ -318,7 +319,7 @@ function renderBook(book = state.activeBook || sampleBook()) {
     <section class="screen book-screen">
       ${nav("library")}
       <header class="book-cover">
-        <p class="eyebrow">知识书单 · ${book.style}</p>
+        <p class="eyebrow">非书 · ${book.style}</p>
         <h1>${book.title}</h1>
         <p>${book.subtitle}</p>
         <div class="tag-row centered">${book.tags.map((tag) => `<span>${tag}</span>`).join("")}</div>
@@ -330,7 +331,7 @@ function renderBook(book = state.activeBook || sampleBook()) {
           <div class="book-stats">
             <span>${book.steps.length} 篇文章</span>
             <span>${book.createdAt}</span>
-            <span>已保存到我的书单</span>
+            <span>已保存到我的非书</span>
           </div>
         </article>
         <article class="toc">
@@ -342,7 +343,7 @@ function renderBook(book = state.activeBook || sampleBook()) {
       </section>
       <div class="actions">
         <button id="restart-button">再走一次</button>
-        <button id="library-button" class="ghost-button">查看我的书单</button>
+        <button id="library-button" class="ghost-button">查看我的非书</button>
       </div>
     </section>
   `;
@@ -358,9 +359,9 @@ function renderLibrary() {
     <section class="screen library-screen">
       ${nav("library")}
       <div class="hero compact-hero">
-        <p class="eyebrow">我的知识书单</p>
-        <h1>保存走过的路线</h1>
-        <p class="lead">每次完成 10 站历险后，系统都会把你的阅读路径保存成一张知识书单。它像歌单一样，可以复读、分享，也可以被评价。</p>
+        <p class="eyebrow">我的非书</p>
+        <h1>保存读出的书</h1>
+        <p class="lead">每次完成 10 站探索后，系统都会把你的阅读路径保存成一本非书。它像歌单一样，可以复读、分享，也可以被评价。</p>
       </div>
       <section class="library-grid">
         ${visibleBooks

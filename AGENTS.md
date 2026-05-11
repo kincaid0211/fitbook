@@ -32,6 +32,14 @@ Keep `PROJECT_GUIDE.md` current after every project update.
 - If features, scripts, UI behavior, or demo data change, add a dated note to the update log.
 - Never copy secrets from `note/`, `.env`, or local API materials into committed documentation.
 
+Keep a local work log for every meaningful project conversation or work session.
+
+- Save each discussion, decision, implementation update, blocker, or verification result as a Markdown file under `note/zhihuhackathon/工作日志/`.
+- Use the filename format `YYYY-MM-DD-HHMM-简短主题.md`.
+- Include the time, user request or discussion topic, actions taken, key decisions, files changed when relevant, verification result, and next steps.
+- This applies to all future sessions for this project, not only the current conversation.
+- `note/` is intentionally ignored by Git because it may contain private planning material or API secrets; do not copy secrets from logs into public documentation.
+
 Submission flow:
 
 - Team info collection: May 7 to May 11, 24:00.

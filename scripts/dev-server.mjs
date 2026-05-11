@@ -37,5 +37,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`知识历险 demo running at http://${host}:${port}`);
+  console.log(`非书 demo running at http://${host}:${port}`);
 });

@@ -5,8 +5,8 @@
   --line: #dfe6da;
   --paper: #fbfaf5;
   --panel: #ffffff;
-  --green: #2f6b4f;
-  --green-dark: #1f4a37;
+  --green: #1772f6;
+  --green-dark: #0f5ed7;
   --gold: #d49b35;
   --rose: #b95f5f;
   --blue: #527c9d;
@@ -102,15 +102,10 @@ button:hover {
   color: var(--green);
 }
 
-.brand-mark {
-  display: inline-grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  margin-right: 8px;
-  border-radius: 8px;
-  background: var(--green);
-  color: #fff;
+.brand-logo {
+  display: block;
+  width: clamp(128px, 18vw, 190px);
+  height: auto;
 }
 
 .hero {

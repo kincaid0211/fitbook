@@ -2,7 +2,7 @@ export const sampleUrl =
   "https://www.zhihu.com/question/2034716605649826257/answer/2035777145448964149";
 
 export const adventure = {
-  title: "从音乐心理学出发的十站知识历险",
+  title: "从音乐心理学出发的十站非书",
   subtitle: "一条关于情绪、记忆、作曲家与日常经验的阅读路线",
   style: "跨界冒险",
   tags: ["音乐心理学", "情绪", "认知科学", "作品理解", "主动学习"],
@@ -15,7 +15,7 @@ export const adventure = {
         "这篇回答从日常经验切入，讨论音乐如何通过节奏、旋律、记忆和期待影响人的情绪状态。",
       concepts: ["情绪调节", "旋律期待", "记忆唤起"],
       bridge:
-        "这是本次历险的起点：它把音乐从审美对象变成了理解情绪和认知的入口。",
+        "这是本次探索的起点：它把音乐从审美对象变成了理解情绪和认知的入口。",
       directions: [
         { label: "继续深入", text: "理解音乐如何调动情绪和身体反应" },
         { label: "跨到心理学", text: "探索记忆、期待与奖赏机制" },
@@ -139,7 +139,7 @@ export const adventure = {
       directions: [
         { label: "回到生活", text: "设计自己的听歌练习" },
         { label: "继续深入", text: "学习作品分析方法" },
-        { label: "生成书单", text: "准备完成这次知识历险" },
+        { label: "生成非书", text: "准备完成这次非书探索" },
       ],
     },
     {
