@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>知识历险</title>
+    <style>:root {
+  color-scheme: light;
+  --ink: #17211b;
+  --muted: #637064;
+  --line: #dfe6da;
+  --paper: #fbfaf5;
+  --panel: #ffffff;
+  --green: #2f6b4f;
+  --green-dark: #1f4a37;
+  --gold: #d49b35;
+  --rose: #b95f5f;
+  --blue: #527c9d;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(251, 250, 245, 0.92), rgba(239, 245, 233, 0.92)),
+    url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23d8e2d2' stroke-width='1'%3E%3Cpath d='M0 20h120M0 60h120M0 100h120M20 0v120M60 0v120M100 0v120'/%3E%3C/g%3E%3C/svg%3E");
+  color: var(--ink);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  background: var(--green);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover {
+  background: var(--green-dark);
+}
+
+.screen {
+  width: min(1120px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 24px 0 40px;
+}
+
+.topbar,
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar {
+  font-weight: 800;
+}
+
+.brand-button,
+.nav-links button {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.brand-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  font-weight: 900;
+}
+
+.brand-button:hover,
+.nav-links button:hover {
+  background: transparent;
+  color: var(--green);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-links button {
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.nav-links button.active {
+  background: #eef6ee;
+  color: var(--green);
+}
+
+.brand-mark {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  margin-right: 8px;
+  border-radius: 8px;
+  background: var(--green);
+  color: #fff;
+}
+
+.hero {
+  max-width: 780px;
+  padding: 72px 0 28px;
+}
+
+.landing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 28px;
+  align-items: end;
+  padding: 72px 0 28px;
+}
+
+.landing-hero h1 {
+  max-width: 760px;
+}
+
+.compact-hero {
+  padding-top: 48px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.hero-actions button {
+  min-height: 46px;
+  padding: 0 18px;
+}
+
+.value-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 22px;
+  box-shadow: 0 18px 50px rgba(40, 56, 42, 0.08);
+}
+
+.value-card h2 {
+  font-size: 24px;
+  line-height: 1.3;
+}
+
+.value-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.value-list span {
+  border-left: 4px solid var(--gold);
+  border-radius: 8px;
+  background: #fffaf0;
+  padding: 12px;
+  font-weight: 800;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 18px;
+  font-size: clamp(44px, 8vw, 88px);
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.lead {
+  max-width: 660px;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1.7;
+}
+
+.start-panel,
+.reading-card,
+.side-panel,
+.preface,
+.toc {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 50px rgba(40, 56, 42, 0.08);
+}
+
+.start-panel {
+  padding: 18px;
+}
+
+.start-panel label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 800;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.input-row button {
+  padding: 0 22px;
+}
+
+.hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.hint.good {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.feature-grid article {
+  min-height: 112px;
+  border-left: 4px solid var(--gold);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  padding: 18px;
+}
+
+.feature-grid strong,
+.feature-grid span {
+  display: block;
+}
+
+.feature-grid span {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.landing-flow {
+  margin-top: 28px;
+}
+
+.landing-flow h2 {
+  font-size: 28px;
+}
+
+.flow-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.flow-grid article {
+  min-height: 164px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 18px;
+}
+
+.flow-grid span {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  margin-bottom: 18px;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font-weight: 900;
+}
+
+.flow-grid strong,
+.flow-grid p {
+  display: block;
+}
+
+.flow-grid p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.app-header {
+  align-items: flex-start;
+  padding: 22px 0;
+}
+
+.app-header h1 {
+  max-width: 780px;
+  font-size: clamp(30px, 5vw, 54px);
+}
+
+.progress-panel {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 14px 16px;
+}
+
+.progress-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.progress-copy span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e3eadf;
+}
+
+.progress-track div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  transition: width 180ms ease;
+}
+
+.ghost-button {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--green);
+}
+
+.ghost-button:hover {
+  background: #eef6ee;
+}
+
+.layout,
+.book-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+}
+
+.reading-card,
+.side-panel,
+.preface,
+.toc {
+  padding: 22px;
+}
+
+.article-meta {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.reading-card p,
+.side-panel p,
+.preface p {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.tag-row.centered {
+  justify-content: center;
+}
+
+.tag-row span {
+  border: 1px solid #c9d8c9;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #f3f8ef;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bridge {
+  border-left: 4px solid var(--rose);
+  border-radius: 8px;
+  background: #fff7f3;
+  padding: 16px;
+}
+
+.bridge p {
+  margin: 8px 0 0;
+}
+
+.direction-list {
+  display: grid;
+  gap: 10px;
+}
+
+.direction {
+  width: 100%;
+  min-height: 78px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  padding: 14px;
+  text-align: left;
+}
+
+.direction:hover,
+.direction.selected {
+  border-color: var(--green);
+  background: #eef6ee;
+}
+
+.direction span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--green);
+  font-weight: 900;
+}
+
+.candidate {
+  margin-top: 16px;
+  border-radius: 8px;
+  background: #f7f2e7;
+  padding: 16px;
+}
+
+.candidate button,
+.primary-wide {
+  width: 100%;
+  padding: 13px 16px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.route-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.route-node {
+  min-height: 112px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 12px;
+}
+
+.route-node.active {
+  border-color: var(--green);
+  background: #eef6ee;
+}
+
+.route-node span {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.route-node p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.book-cover {
+  min-height: 360px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(31, 74, 55, 0.94), rgba(82, 124, 157, 0.88)),
+    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 150 C60 30 150 30 180 150' fill='none' stroke='%23fff' stroke-opacity='.2' stroke-width='10'/%3E%3Cpath d='M34 158 C74 62 132 62 166 158' fill='none' stroke='%23fff' stroke-opacity='.22' stroke-width='4'/%3E%3C/svg%3E");
+  color: #fff;
+  padding: 28px;
+  text-align: center;
+}
+
+.book-cover h1 {
+  max-width: 760px;
+  font-size: clamp(38px, 7vw, 72px);
+}
+
+.book-cover p {
+  max-width: 640px;
+  line-height: 1.7;
+}
+
+.book-cover .eyebrow {
+  color: #f7d99c;
+}
+
+.book-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.book-stats span,
+.book-card-footer span {
+  border-radius: 999px;
+  background: #eef6ee;
+  color: var(--green);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.book-card {
+  min-height: 280px;
+  display: grid;
+  align-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 244, 0.88)),
+    url("data:image/svg+xml,%3Csvg width='160' height='160' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 120 C52 36 106 36 140 120' fill='none' stroke='%232f6b4f' stroke-opacity='.1' stroke-width='8'/%3E%3C/svg%3E");
+  padding: 20px;
+  box-shadow: 0 18px 50px rgba(40, 56, 42, 0.08);
+  cursor: pointer;
+}
+
+.book-card:hover {
+  border-color: var(--green);
+}
+
+.book-card h2 {
+  font-size: 25px;
+  line-height: 1.25;
+}
+
+.book-card p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.book-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toc ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.toc li span,
+.toc li small {
+  display: block;
+}
+
+.toc li small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.actions button {
+  padding: 12px 18px;
+}
+
+@media (max-width: 820px) {
+  .screen {
+    width: min(100vw - 24px, 720px);
+    padding-top: 18px;
+  }
+
+  .hero {
+    padding-top: 48px;
+  }
+
+  h1 {
+    font-size: 44px;
+  }
+
+  .input-row,
+  .feature-grid,
+  .landing-hero,
+  .flow-grid,
+  .layout,
+  .book-layout,
+  .library-grid,
+  .route-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .input-row button {
+    min-height: 48px;
+  }
+
+  .app-header {
+    display: grid;
+  }
+
+  .topbar,
+  .progress-copy {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+</style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script>const sampleUrl =
+  "https://www.zhihu.com/question/2034716605649826257/answer/2035777145448964149";
+
+const adventure = {
+  title: "从音乐心理学出发的十站知识历险",
+  subtitle: "一条关于情绪、记忆、作曲家与日常经验的阅读路线",
+  style: "跨界冒险",
+  tags: ["音乐心理学", "情绪", "认知科学", "作品理解", "主动学习"],
+  steps: [
+    {
+      title: "音乐为什么会影响我们的情绪？",
+      author: "知乎用户",
+      url: sampleUrl,
+      summary:
+        "这篇回答从日常经验切入，讨论音乐如何通过节奏、旋律、记忆和期待影响人的情绪状态。",
+      concepts: ["情绪调节", "旋律期待", "记忆唤起"],
+      bridge:
+        "这是本次历险的起点：它把音乐从审美对象变成了理解情绪和认知的入口。",
+      directions: [
+        { label: "继续深入", text: "理解音乐如何调动情绪和身体反应" },
+        { label: "跨到心理学", text: "探索记忆、期待与奖赏机制" },
+        { label: "走向作品", text: "看看具体音乐作品为何让人动容" },
+      ],
+    },
+    {
+      title: "为什么有些旋律会让人起鸡皮疙瘩？",
+      author: "知乎创作者",
+      url: "#",
+      summary:
+        "文章解释了听觉期待、高潮段落、身体反应与多巴胺之间的关系。",
+      concepts: ["鸡皮疙瘩", "多巴胺", "听觉期待"],
+      bridge:
+        "上一站提出音乐会影响情绪，这一站深入到身体反应：为什么某个瞬间会让人产生强烈触动。",
+      directions: [
+        { label: "继续深入", text: "进入奖赏系统与多巴胺" },
+        { label: "人物故事", text: "寻找作曲家如何制造期待" },
+        { label: "观点挑战", text: "音乐反应是否被过度神秘化" },
+      ],
+    },
+    {
+      title: "多巴胺到底是不是快乐物质？",
+      author: "知乎心理学作者",
+      url: "#",
+      summary:
+        "这篇内容澄清多巴胺和快乐、期待、动机之间的关系，解释常见误解。",
+      concepts: ["多巴胺", "奖赏预测", "动机"],
+      bridge:
+        "上一站谈到音乐高潮带来的身体反应，这一站转入更底层的心理机制：期待本身如何塑造体验。",
+      directions: [
+        { label: "回到音乐", text: "把奖赏预测带回音乐结构" },
+        { label: "跨界冒险", text: "看看游戏和短视频如何利用期待" },
+        { label: "回到生活", text: "理解习惯、专注和自我激励" },
+      ],
+    },
+    {
+      title: "作曲家如何安排一次情绪抵达？",
+      author: "知乎音乐答主",
+      url: "#",
+      summary:
+        "从动机、和声、重复和延迟解决等角度，说明音乐作品如何设计情绪路径。",
+      concepts: ["和声", "动机发展", "延迟解决"],
+      bridge:
+        "理解了期待机制后，这一站回到作品内部：作曲家正是通过延迟、重复和变化来组织期待。",
+      directions: [
+        { label: "作品线索", text: "进入一首具体作品的评论" },
+        { label: "人物故事", text: "理解作曲家的人生处境" },
+        { label: "观点挑战", text: "作品分析是否会削弱感受" },
+      ],
+    },
+    {
+      title: "为什么我们会在音乐里听见自己的记忆？",
+      author: "知乎用户",
+      url: "#",
+      summary:
+        "文章讨论音乐、场景记忆与个人经历之间的绑定关系，解释怀旧感的来源。",
+      concepts: ["自传体记忆", "怀旧", "场景绑定"],
+      bridge:
+        "上一站关注作品怎样设计情绪，这一站转向听者：同一首作品为什么会唤起不同人的私人记忆。",
+      directions: [
+        { label: "继续深入", text: "探索记忆如何被声音触发" },
+        { label: "回到生活", text: "用音乐整理个人经验" },
+        { label: "跨到文学", text: "比较音乐记忆与文字记忆" },
+      ],
+    },
+    {
+      title: "音乐治疗真的有效吗？",
+      author: "知乎医学科普作者",
+      url: "#",
+      summary:
+        "内容区分音乐放松、临床音乐治疗和商业化概念，讨论证据边界。",
+      concepts: ["音乐治疗", "临床证据", "情绪干预"],
+      bridge:
+        "既然音乐能触发情绪和记忆，这一站自然追问：它是否能被有意识地用于治疗和干预。",
+      directions: [
+        { label: "观点挑战", text: "辨析音乐治疗的证据强度" },
+        { label: "回到生活", text: "普通人如何安全使用音乐调节状态" },
+        { label: "继续深入", text: "进入心理干预方法" },
+      ],
+    },
+    {
+      title: "古典音乐一定比流行音乐更高级吗？",
+      author: "知乎音乐评论者",
+      url: "#",
+      summary:
+        "文章从审美经验、文化资本和作品复杂度讨论音乐品味的等级想象。",
+      concepts: ["审美等级", "文化资本", "流行音乐"],
+      bridge:
+        "前几站从机制谈音乐，这一站把问题推向社会层面：我们如何评价不同类型的音乐。",
+      directions: [
+        { label: "观点挑战", text: "拆解音乐品味中的偏见" },
+        { label: "跨界冒险", text: "连接社会学中的文化资本" },
+        { label: "作品线索", text: "比较不同音乐类型的表达方式" },
+      ],
+    },
+    {
+      title: "文化资本如何影响我们的审美判断？",
+      author: "知乎社会学作者",
+      url: "#",
+      summary:
+        "内容介绍文化资本如何塑造教育、品味和身份表达。",
+      concepts: ["文化资本", "身份表达", "审美判断"],
+      bridge:
+        "上一站质疑音乐品味的高低之分，这一站给出社会学解释：品味常常也是身份和经验的表达。",
+      directions: [
+        { label: "回到音乐", text: "重新理解音乐品味的形成" },
+        { label: "跨界冒险", text: "进入教育和阶层流动" },
+        { label: "回到生活", text: "观察自己的审美来源" },
+      ],
+    },
+    {
+      title: "怎样训练自己更开放地听音乐？",
+      author: "知乎音乐爱好者",
+      url: "#",
+      summary:
+        "文章提供从背景、结构、时代和个人感受四个维度进入陌生音乐的方法。",
+      concepts: ["开放聆听", "主动学习", "审美训练"],
+      bridge:
+        "理解了心理机制和社会因素后，这一站回到行动：如何主动扩展自己的音乐经验。",
+      directions: [
+        { label: "回到生活", text: "设计自己的听歌练习" },
+        { label: "继续深入", text: "学习作品分析方法" },
+        { label: "生成书单", text: "准备完成这次知识历险" },
+      ],
+    },
+    {
+      title: "我们如何走出自己的认知茧房？",
+      author: "知乎思想类作者",
+      url: "#",
+      summary:
+        "文章讨论兴趣、算法、主动选择和跨领域阅读如何共同影响一个人的视野。",
+      concepts: ["认知茧房", "主动选择", "跨领域阅读"],
+      bridge:
+        "最后一站把整条路线收束起来：从音乐出发，我们最终抵达的是如何主动拓展自己的视野。",
+      directions: [],
+    },
+  ],
+};
+
+
+const app = document.querySelector("#app");
+const libraryKey = "zhishi-lixian-library";
+
+const state = {
+  view: "landing",
+  currentIndex: 0,
+  route: [adventure.steps[0]],
+  selectedDirection: null,
+  inputUrl: sampleUrl,
+  finished: false,
+  activeBook: null,
+};
+
+function parseZhihuUrl(input) {
+  try {
+    const url = new URL(input);
+    const host = url.hostname.toLowerCase();
+    const path = url.pathname;
+
+    if (host === "zhuanlan.zhihu.com" && /^\/p\/[^/]+/.test(path)) return "知乎文章";
+    if ((host === "www.zhihu.com" || host === "zhihu.com") && /^\/question\/[^/]+\/answer\/[^/]+/.test(path)) return "知乎回答";
+    if ((host === "www.zhihu.com" || host === "zhihu.com") && /^\/question\/[^/]+/.test(path)) return "知乎问题";
+    if ((host === "www.zhihu.com" || host === "zhihu.com") && /^\/market\/paid_column\/[^/]+\/section\/[^/]+/.test(path)) return "知乎知识内容";
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function readLibrary() {
+  try {
+    return JSON.parse(localStorage.getItem(libraryKey) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function writeLibrary(books) {
+  localStorage.setItem(libraryKey, JSON.stringify(books));
+}
+
+function makeBook() {
+  return {
+    id: `book_${Date.now()}`,
+    title: adventure.title,
+    subtitle: adventure.subtitle,
+    style: adventure.style,
+    tags: adventure.tags,
+    steps: state.route,
+    createdAt: new Date().toLocaleString("zh-CN"),
+    preface:
+      "这本知识书单从一篇关于音乐心理学的知乎回答出发，经过情绪、奖赏机制、作品结构、个人记忆、社会审美与认知茧房，最终形成一条由用户选择走出的阅读路线。",
+  };
+}
+
+function saveCurrentBook() {
+  const book = makeBook();
+  const existing = readLibrary();
+  writeLibrary([book, ...existing.filter((item) => item.title !== book.title)].slice(0, 12));
+  return book;
+}
+
+function sampleBook() {
+  return {
+    id: "sample",
+    title: adventure.title,
+    subtitle: adventure.subtitle,
+    style: adventure.style,
+    tags: adventure.tags,
+    steps: adventure.steps,
+    createdAt: "示例书单",
+    preface:
+      "这是一条示例知识历险路线，用来展示用户完成 10 站探索后，如何把阅读过程沉淀成类似歌单的知识书单。",
+  };
+}
+
+function update(partial) {
+  Object.assign(state, partial);
+  render();
+}
+
+function navigate(view) {
+  update({ view, selectedDirection: null, activeBook: null });
+}
+
+function startAdventure(event) {
+  event?.preventDefault();
+  const type = parseZhihuUrl(state.inputUrl);
+  if (!type) {
+    update({ selectedDirection: "请粘贴知乎文章、回答、问题或知识内容链接。" });
+    return;
+  }
+  update({
+    view: "adventure",
+    currentIndex: 0,
+    route: [adventure.steps[0]],
+    selectedDirection: null,
+    finished: false,
+    activeBook: null,
+  });
+}
+
+function chooseDirection(direction) {
+  update({ selectedDirection: direction.text });
+}
+
+function goNext() {
+  const nextIndex = Math.min(state.currentIndex + 1, adventure.steps.length - 1);
+  update({
+    currentIndex: nextIndex,
+    route: adventure.steps.slice(0, nextIndex + 1),
+    selectedDirection: null,
+    finished: nextIndex === adventure.steps.length - 1,
+  });
+}
+
+function restart() {
+  update({
+    view: "start",
+    currentIndex: 0,
+    route: [adventure.steps[0]],
+    selectedDirection: null,
+    inputUrl: sampleUrl,
+    finished: false,
+    activeBook: null,
+  });
+}
+
+function finishBook() {
+  const book = saveCurrentBook();
+  update({ view: "book", activeBook: book, finished: "book" });
+}
+
+function nav(active) {
+  return `
+    <nav class="topbar">
+      <button class="brand-button" data-view="landing"><span class="brand-mark">知</span><span>知识历险</span></button>
+      <div class="nav-links">
+        <button class="${active === "landing" ? "active" : ""}" data-view="landing">首页</button>
+        <button class="${active === "start" ? "active" : ""}" data-view="start">开始历险</button>
+        <button class="${active === "library" ? "active" : ""}" data-view="library">我的书单</button>
+      </div>
+    </nav>
+  `;
+}
+
+function bindNav() {
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    button.addEventListener("click", () => navigate(button.dataset.view));
+  });
+}
+
+function renderLanding() {
+  app.innerHTML = `
+    <section class="screen landing-screen">
+      ${nav("landing")}
+      <div class="landing-hero">
+        <div>
+          <p class="eyebrow">知乎站内主动学习 demo</p>
+          <h1>从一篇文章出发，走出自己的知识地图</h1>
+          <p class="lead">知识历险把知乎优质内容组织成一场 10 站阅读游戏。每一步都有选择，每一次跳转都有理由，最后生成一张可分享、可评价的知识书单。</p>
+          <div class="hero-actions">
+            <button id="hero-start">开始一次历险</button>
+            <button class="ghost-button" id="hero-library">查看我的书单</button>
+          </div>
+        </div>
+        <aside class="value-card">
+          <p class="eyebrow">产品价值</p>
+          <h2>不是让算法继续喂内容，而是让用户主动选择下一站。</h2>
+          <div class="value-list">
+            <span>突破认知茧房</span>
+            <span>沉淀阅读成果</span>
+            <span>让优质内容重新流动</span>
+          </div>
+        </aside>
+      </div>
+      <section class="feature-grid" aria-label="核心玩法">
+        <article><strong>有限探索</strong><span>10 站封顶，给阅读明确终点和完成感。</span></article>
+        <article><strong>知识桥</strong><span>每一步都解释为什么能从上一篇走到下一篇。</span></article>
+        <article><strong>书单化</strong><span>最终生成类似歌单的知识路线，可保存、分享、评价。</span></article>
+      </section>
+      <section class="landing-flow">
+        <h2>一次知识历险如何发生</h2>
+        <div class="flow-grid">
+          <article><span>1</span><strong>粘贴知乎链接</strong><p>从用户正在阅读的一篇内容出发。</p></article>
+          <article><span>2</span><strong>选择下一站</strong><p>在深入、跨界、人物、观点挑战中做选择。</p></article>
+          <article><span>3</span><strong>完成 10 站</strong><p>走完一条有叙事和关联的阅读路线。</p></article>
+          <article><span>4</span><strong>保存成书单</strong><p>沉淀为一张可分享的知识歌单。</p></article>
+        </div>
+      </section>
+    </section>
+  `;
+  bindNav();
+  document.querySelector("#hero-start").addEventListener("click", () => navigate("start"));
+  document.querySelector("#hero-library").addEventListener("click", () => navigate("library"));
+}
+
+function renderStart() {
+  const detectedType = parseZhihuUrl(state.inputUrl);
+  app.innerHTML = `
+    <section class="screen start-screen">
+      ${nav("start")}
+      <div class="hero compact-hero">
+        <p class="eyebrow">开始一局新的知识历险</p>
+        <h1>选择起点</h1>
+        <p class="lead">粘贴一篇知乎文章、回答、问题或知识内容链接，AI 会把它变成 10 站探索路线的第一站。</p>
+      </div>
+      <form class="start-panel" id="start-form">
+        <label for="url-input">粘贴知乎文章链接</label>
+        <div class="input-row">
+          <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/.../answer/..." />
+          <button type="submit">开始历险</button>
+        </div>
+        <p class="${detectedType ? "hint good" : "hint"}">${detectedType ? `已识别：${detectedType}` : state.selectedDirection || "支持知乎文章、回答、问题和知识内容链接。"}</p>
+      </form>
+    </section>
+  `;
+
+  bindNav();
+  document.querySelector("#url-input").addEventListener("input", (event) => {
+    state.inputUrl = event.target.value;
+    render();
+  });
+  document.querySelector("#start-form").addEventListener("submit", startAdventure);
+}
+
+function renderAdventure() {
+  const step = adventure.steps[state.currentIndex];
+  const progressLabel = `${state.currentIndex + 1} / ${adventure.steps.length}`;
+  const progressPercent = Math.round(((state.currentIndex + 1) / adventure.steps.length) * 100);
+  const nextStep = adventure.steps[state.currentIndex + 1];
+
+  app.innerHTML = `
+    <section class="screen adventure-screen">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">第 ${progressLabel} 站 · ${adventure.style}</p>
+          <h1>${step.title}</h1>
+        </div>
+        <button class="ghost-button" id="restart-button">重新开始</button>
+      </header>
+      <section class="progress-panel" aria-label="历险进度">
+        <div class="progress-copy">
+          <strong>知识历险进度</strong>
+          <span>已完成 ${progressPercent}% · 还差 ${adventure.steps.length - state.currentIndex - 1} 站生成书单</span>
+        </div>
+        <div class="progress-track"><div style="width: ${progressPercent}%"></div></div>
+      </section>
+
+      <div class="layout">
+        <article class="reading-card">
+          <div class="article-meta">作者：${step.author}</div>
+          <p>${step.summary}</p>
+          <div class="tag-row">${step.concepts.map((tag) => `<span>${tag}</span>`).join("")}</div>
+          <div class="bridge">
+            <strong>知识桥</strong>
+            <p>${step.bridge}</p>
+          </div>
+        </article>
+
+        <aside class="side-panel">
+          <h2>下一站方向</h2>
+          ${
+            step.directions.length
+              ? `<div class="direction-list">${step.directions
+                  .map(
+                    (direction, index) => `
+                      <button class="direction ${state.selectedDirection === direction.text ? "selected" : ""}" data-index="${index}">
+                        <span>${direction.label}</span>
+                        ${direction.text}
+                      </button>
+                    `,
+                  )
+                  .join("")}</div>`
+              : `<p class="muted">已抵达第 10 站，可以生成知识书单。</p>`
+          }
+          ${
+            state.selectedDirection && nextStep
+              ? `<div class="candidate">
+                  <p class="eyebrow">推荐候选</p>
+                  <h3>${nextStep.title}</h3>
+                  <p>${nextStep.summary}</p>
+                  <button id="next-button">加入路线</button>
+                </div>`
+              : ""
+          }
+          ${state.finished ? `<button id="book-button" class="primary-wide">生成并保存知识书单</button>` : ""}
+        </aside>
+      </div>
+
+      <section class="route-strip">
+        ${state.route
+          .map(
+            (item, index) => `
+              <div class="route-node ${index === state.currentIndex ? "active" : ""}">
+                <span>${index + 1}</span>
+                <p>${item.title}</p>
+              </div>
+            `,
+          )
+          .join("")}
+      </section>
+    </section>
+  `;
+
+  document.querySelector("#restart-button").addEventListener("click", restart);
+  document.querySelectorAll(".direction").forEach((button) => {
+    button.addEventListener("click", () => chooseDirection(step.directions[Number(button.dataset.index)]));
+  });
+  document.querySelector("#next-button")?.addEventListener("click", goNext);
+  document.querySelector("#book-button")?.addEventListener("click", finishBook);
+}
+
+function renderBook(book = state.activeBook || sampleBook()) {
+  app.innerHTML = `
+    <section class="screen book-screen">
+      ${nav("library")}
+      <header class="book-cover">
+        <p class="eyebrow">知识书单 · ${book.style}</p>
+        <h1>${book.title}</h1>
+        <p>${book.subtitle}</p>
+        <div class="tag-row centered">${book.tags.map((tag) => `<span>${tag}</span>`).join("")}</div>
+      </header>
+      <section class="book-layout">
+        <article class="preface">
+          <h2>序言</h2>
+          <p>${book.preface}</p>
+          <div class="book-stats">
+            <span>${book.steps.length} 篇文章</span>
+            <span>${book.createdAt}</span>
+            <span>已保存到我的书单</span>
+          </div>
+        </article>
+        <article class="toc">
+          <h2>目录</h2>
+          <ol>
+            ${book.steps.map((step) => `<li><span>${step.title}</span><small>${step.author}</small></li>`).join("")}
+          </ol>
+        </article>
+      </section>
+      <div class="actions">
+        <button id="restart-button">再走一次</button>
+        <button id="library-button" class="ghost-button">查看我的书单</button>
+      </div>
+    </section>
+  `;
+  bindNav();
+  document.querySelector("#restart-button").addEventListener("click", restart);
+  document.querySelector("#library-button").addEventListener("click", () => navigate("library"));
+}
+
+function renderLibrary() {
+  const books = readLibrary();
+  const visibleBooks = books.length ? books : [sampleBook()];
+  app.innerHTML = `
+    <section class="screen library-screen">
+      ${nav("library")}
+      <div class="hero compact-hero">
+        <p class="eyebrow">我的知识书单</p>
+        <h1>保存走过的路线</h1>
+        <p class="lead">每次完成 10 站历险后，系统都会把你的阅读路径保存成一张知识书单。它像歌单一样，可以复读、分享，也可以被评价。</p>
+      </div>
+      <section class="library-grid">
+        ${visibleBooks
+          .map(
+            (book) => `
+              <article class="book-card" data-book="${book.id}">
+                <p class="eyebrow">${book.createdAt}</p>
+                <h2>${book.title}</h2>
+                <p>${book.subtitle}</p>
+                <div class="tag-row">${book.tags.slice(0, 3).map((tag) => `<span>${tag}</span>`).join("")}</div>
+                <div class="book-card-footer">
+                  <span>${book.steps.length} 站</span>
+                  <span>可分享 · 可评价</span>
+                </div>
+              </article>
+            `,
+          )
+          .join("")}
+      </section>
+    </section>
+  `;
+  bindNav();
+  document.querySelectorAll(".book-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const book = visibleBooks.find((item) => item.id === card.dataset.book);
+      update({ view: "book", activeBook: book });
+    });
+  });
+}
+
+function render() {
+  if (state.view === "landing") renderLanding();
+  else if (state.view === "start") renderStart();
+  else if (state.view === "library") renderLibrary();
+  else if (state.view === "book") renderBook();
+  else renderAdventure();
+}
+
+render();
+</script>
+  </body>
+</html>

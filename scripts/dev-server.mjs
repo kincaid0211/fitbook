@@ -1,0 +1,41 @@
+import http from "node:http";
+import fs from "node:fs/promises";
+import path from "node:path";
+
+const root = process.cwd();
+const port = Number(process.env.PORT || 5173);
+const host = process.env.HOST || "127.0.0.1";
+
+const mimeTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+};
+
+function safePath(urlPath) {
+  const decoded = decodeURIComponent(urlPath.split("?")[0]);
+  const normalized = path.normalize(decoded === "/" ? "/index.html" : decoded);
+  const filePath = path.join(root, normalized);
+  if (!filePath.startsWith(root)) return path.join(root, "index.html");
+  return filePath;
+}
+
+const server = http.createServer(async (req, res) => {
+  try {
+    const filePath = safePath(req.url || "/");
+    const ext = path.extname(filePath);
+    const data = await fs.readFile(filePath);
+    res.writeHead(200, { "Content-Type": mimeTypes[ext] || "application/octet-stream" });
+    res.end(data);
+  } catch {
+    const data = await fs.readFile(path.join(root, "index.html"));
+    res.writeHead(200, { "Content-Type": mimeTypes[".html"] });
+    res.end(data);
+  }
+});
+
+server.listen(port, host, () => {
+  console.log(`知识历险 demo running at http://${host}:${port}`);
+});
