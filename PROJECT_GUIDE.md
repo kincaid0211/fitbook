@@ -31,6 +31,7 @@
 ├── README.md                         # GitHub 首页简介和运行入口
 ├── index.html                        # 本地开发入口
 ├── package.json                      # 项目脚本定义
+├── 非书项目Todo与时间计划.md          # 公开版项目 Todo、时间计划和进度盘点
 ├── assets/
 │   ├── feishu-logo.png               # 非书横版品牌 Logo
 │   └── ui/                           # 关键页面 UI 视觉稿图片
@@ -169,6 +170,7 @@ git push fitbook master
 - 新增 `docs/UI_VISUALS.md`，整理非书关键页面 UI 视觉稿，包括落地页、我的非书冷启动/示例路线页和非书详情页。
 - 新增 `assets/ui/`，保存三张关键页面视觉稿：`feishu-landing-ui.png`、`feishu-library-ui.png`、`feishu-detail-ui.png`。
 - 更新 `README.md`，加入关键页面 UI 视觉稿文档入口。
+- 新增根目录公开版 `非书项目Todo与时间计划.md`，同步本地 Todo 和进度盘点；公开版不包含具体 API token 或 secret。
 
 ### 2026-05-11
 
