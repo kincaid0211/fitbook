@@ -26,4 +26,4 @@ npm run dev
 
 - The current demo uses mock data to guarantee a stable hackathon presentation.
 - Sensitive local notes and API materials under `note/` are intentionally excluded from Git.
-
+- See [PROJECT_GUIDE.md](PROJECT_GUIDE.md) for the file structure, deployment flow, update log, and documentation maintenance rules.

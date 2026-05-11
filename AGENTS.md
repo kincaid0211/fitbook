@@ -23,6 +23,15 @@ Optional but helpful:
 
 - A GitHub repository link to show code quality and engineering implementation.
 
+## Documentation Maintenance
+
+Keep `PROJECT_GUIDE.md` current after every project update.
+
+- If files are added, removed, or moved, update the file structure section.
+- If run, build, deployment, or GitHub publishing steps change, update the deployment/update sections.
+- If features, scripts, UI behavior, or demo data change, add a dated note to the update log.
+- Never copy secrets from `note/`, `.env`, or local API materials into committed documentation.
+
 Submission flow:
 
 - Team info collection: May 7 to May 11, 24:00.
