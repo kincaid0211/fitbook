@@ -50,14 +50,9 @@ export default async function handler(req, res) {
 
     const rawModels = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.models) ? payload.models : [];
     const models = rawModels.map(normalizeModel).filter(Boolean).sort((a, b) => a.id.localeCompare(b.id));
-    const filtered =
-      provider === "siliconflow"
-        ? models.filter((model) => /moonshot|kimi/i.test(model.id))
-        : models;
 
-    const finalModels = filtered.length ? filtered : models;
-    setCache(cacheKey, finalModels, 30 * 60 * 1000);
-    sendJson(res, 200, { ok: true, provider, models: finalModels, cached: false });
+    setCache(cacheKey, models, 30 * 60 * 1000);
+    sendJson(res, 200, { ok: true, provider, models, cached: false });
   } catch (error) {
     handleApiError(res, error, "模型列表获取失败。");
   }

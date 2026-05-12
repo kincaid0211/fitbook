@@ -200,6 +200,12 @@
   box-shadow: 0 18px 42px rgba(17, 26, 51, 0.22);
 }
 
+.node-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 @media (max-width: 860px) {
   .admin-header,
   .form-row {
