@@ -33,6 +33,7 @@ npm run dev
 The confirmed implementation plan uses Vercel as the official deployment target:
 
 - `/` as the public demo entry.
+- `/admin.html` as the standalone AI node configuration page.
 - `/api/*` as Vercel Serverless Functions.
 - Kimi `kimi-k2.6` as the LLM backend.
 - `dist/demo.html` as a backup standalone demo.
@@ -55,7 +56,11 @@ SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
 - The prototype now presents article-link or pasted-text starts, AI-curated directions, candidate selection, early book generation, chapter-guide boundaries, and cover concept generation.
 - The first real API flow is implemented under `/api/*`: start, directions, candidates, choose, book, and cover.
 - Candidate lists are currently generated from Zhihu/global search results with stable server-side rules; Kimi generates directions, chapter guides, bridges, books, and cover concepts.
+- AI node prompts and model choices can be edited at `/admin.html`; settings are stored in browser localStorage and sent with API requests.
+- AI prompts have been consolidated in `lib/prompts.js`: a strengthened curator system prompt plus five node user-payload builders enforce field shape, length limits, direction-type diversity, candidate fidelity, and `chapters.length === route.length`. Verified end-to-end against SiliconFlow `Pro/moonshotai/Kimi-K2.6` on 2026-05-12.
+- Long-running AI steps show explicit progress messages and elapsed waiting time.
 - SiliconFlow can be used as a test or backup OpenAI-compatible model provider.
 - Kimi/API failures should show a clear failure message instead of silently falling back to mock data.
 - Sensitive local notes and API materials under `note/` are intentionally excluded from Git.
 - See [PROJECT_GUIDE.md](PROJECT_GUIDE.md) for the file structure, deployment flow, update log, and documentation maintenance rules.
+- See [CLAUDE.md](CLAUDE.md) for the Claude Code working context, technical stack cheat sheet, current progress snapshot, and collaboration conventions.

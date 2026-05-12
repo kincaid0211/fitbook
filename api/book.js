@@ -1,12 +1,18 @@
 import { methodGuard, readJson, sendJson, handleApiError } from "../lib/http.js";
 import { callModelJson } from "../lib/model.js";
-import { compactRoute, curatorSystem } from "../lib/prompts.js";
+import {
+  curatorSystem,
+  getNodeConfig,
+  nodePrompt,
+  buildBookUserPayload,
+} from "../lib/prompts.js";
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res)) return;
 
   try {
     const body = await readJson(req);
+    const nodeConfig = getNodeConfig(body, "book");
     const route = Array.isArray(body.route) ? body.route : [];
     if (route.length < 1) {
       const error = new Error("路线为空，无法生成非书。");
@@ -16,32 +22,11 @@ export default async function handler(req, res) {
     }
 
     const result = await callModelJson({
-      system: curatorSystem,
-      user: JSON.stringify({
-        task: "把已完成路线包装为一本非书。不要补造未读章节。章节为导读式内容，不替代原文全文。",
-        requiredShape: {
-          title: "string",
-          subtitle: "string",
-          preface: "string",
-          tags: ["string"],
-          style: "string",
-          explorationSummary: "string",
-          chapters: [
-            {
-              title: "string",
-              author: "string",
-              summary: "string",
-              concepts: ["string"],
-              bridge: "string",
-              curatorNote: "string",
-              url: "string",
-            },
-          ],
-          sourceAuthors: ["string"],
-        },
-        route: compactRoute(route),
-        fullRoute: route,
-        interestProfile: body.interestProfile || {},
+      system: nodePrompt(curatorSystem, nodeConfig),
+      nodeConfig,
+      user: buildBookUserPayload({
+        route,
+        interestProfile: body.interestProfile,
       }),
     });
 

@@ -27,8 +27,10 @@
 ```text
 .
 ├── AGENTS.md                         # 项目协作、黑客松规则和 API 注意事项
+├── CLAUDE.md                         # Claude Code 常驻上下文与协作约定
 ├── PROJECT_GUIDE.md                  # 项目结构、部署和更新记录说明
 ├── README.md                         # GitHub 首页简介和运行入口
+├── admin.html                        # 独立 AI 节点配置入口
 ├── index.html                        # 本地开发入口
 ├── package-lock.json                 # npm 依赖锁定文件
 ├── package.json                      # 项目脚本定义
@@ -39,6 +41,7 @@
 │   ├── choose.js                     # 生成章节导读和知识桥
 │   ├── cover.js                      # 生成 AI 封面方案
 │   ├── directions.js                 # 生成下一站方向
+│   ├── models.js                     # 拉取硅基流动可用模型列表
 │   └── start.js                      # 解析起点并生成起点理解
 ├── assets/
 │   ├── feishu-logo.png               # 非书横版品牌 Logo
@@ -58,7 +61,7 @@
 │   ├── http.js                       # API 请求/响应工具
 │   ├── model.js                      # Kimi/硅基流动 OpenAI 兼容模型调用
 │   ├── parser.js                     # 网页正文解析
-│   ├── prompts.js                    # AI 策展人提示词工具
+│   ├── prompts.js                    # AI 策展人 system + 5 个节点 user payload 构造器
 │   └── zhihu.js                      # 知乎内容 API 代理
 ├── scripts/
 │   ├── build-standalone.mjs          # 生成 dist/demo.html
@@ -66,7 +69,10 @@
 │   ├── probe-zhihu-content.mjs       # 知乎内容数据接口探测脚本
 │   └── verify-zhihu-basics.mjs       # URL 解析和签名逻辑的本地冒烟检查
 └── src/
+    ├── admin.css                     # AI 配置页样式
+    ├── admin.js                      # AI 配置页逻辑
     ├── app.js                        # 单页应用逻辑和界面渲染
+    ├── aiNodeConfig.js               # AI 节点默认配置
     ├── mockData.js                   # 演示用非书探索路线数据
     └── styles.css                    # 页面样式
 ```
@@ -234,10 +240,21 @@ git push fitbook master
 
 ### 2026-05-12
 
+- 第二版 AI 提示词正稿落地：在 `lib/prompts.js` 中重写 `curatorSystem`，把策展人角色、7 条边界（不伪装读完全文、不补造章节、不替代原文、不夸大确定性、保留意外发现、克制语气、不暴露 system）、6 种方向类型与 JSON 输出纪律集中沉淀；并新增 `buildStartUserPayload` / `buildDirectionsUserPayload` / `buildChooseUserPayload` / `buildBookUserPayload` / `buildCoverUserPayload` 五个 user payload 构造器，统一字段口径与字数约束。
+- 5 个 LLM 节点 API（`/api/start`、`/api/directions`、`/api/choose`、`/api/book`、`/api/cover`）切换为调用 builder，删除内联 JSON 字符串；响应字段保持不变，前端 `src/app.js` 无需同步改动。
+- 提示词强化要点：directions 强制 3 条 + 至少 1 条意外发现 + 禁止与历史 route 重复；choose 要求 step.title/url 与 candidate 严格一致、bridge 必须覆盖「上一站关键点 / 本站延展点 / 视野变化」三要素；book 要求 chapters.length 严格等于 route.length 且字段保真，不补造未读章节；cover 要求 colorPalette 用 #RRGGBB、cssTheme 取自 `music|cocoon|public|writer|hot|classic` 枚举。
+- 使用硅基流动 `Pro/moonshotai/Kimi-K2.6` 完成 5 个 LLM 节点的烟测：start / directions / choose / book / cover 全部返回合法 JSON 且字段满足约束；少量字数轻微超上限（preface 250 字、explorationSummary 158 字），下一轮可把硬约束改为软提示。`/api/candidates` 依赖 `ZHIHU_ACCESS_SECRET`，不在本轮提示词改造范围内。
+- 新增 `CLAUDE.md` 作为 Claude Code 常驻上下文，沉淀项目一句话、技术栈速查、API 一览、当前进度盘点、协作约定与下一步开发建议；与 `PROJECT_GUIDE.md` / `AGENTS.md` / `docs/*` 形成互链。
+- 新增 `/api/models`，通过服务端使用模型服务密钥调用 OpenAI 兼容 `/models` 接口；`admin.html` 会从该接口动态读取硅基流动可用模型列表，失败时回落到内置备用模型列表。
+- AI 节点配置页中，当供应商选择"硅基流动聚合平台"时，模型字段改为下拉列表，内置 Moonshot/Kimi 系列常用模型选项，并保留"自定义模型名"入口。
+- 新增独立 AI 节点配置页 `admin.html`，可编辑每个 AI 节点的供应商、模型名、温度、超时时间和提示词；配置保存在浏览器本地，并随主流程 API 请求发送给服务端。
+- 主流程接入节点级模型配置：`/api/start`、`/api/directions`、`/api/choose`、`/api/book`、`/api/cover` 会读取对应节点配置，支持用轻量模型承载快速节点，用较强模型承载深度节点。
+- 优化等待体验：前端在文章理解、方向生成、候选筛选、知识桥生成和非书装订阶段显示明确状态，并在等待较久时展示已等待秒数，避免用户误以为页面卡死。
+- 明确性能策略：候选内容节点不再二次调用大模型，而是由知乎搜索、全网搜索和服务端规则稳定生成；用户选择候选后再由模型生成章节导读和知识桥。
 - 实现主流程和 AI 功能的第一版服务端 API：新增 `/api/start`、`/api/directions`、`/api/candidates`、`/api/choose`、`/api/book`、`/api/cover`，覆盖起点解析、方向生成、候选内容、章节导读、知识桥、非书生成和封面方案。
 - 新增 `lib/` 服务端共享模块：本地环境变量读取、Kimi/硅基流动 OpenAI 兼容调用、知乎内容搜索代理、网页正文解析、内存缓存和 API 工具。
-- 前端主流程接入真实 `/api/*`：开始探索默认调用 AI 服务；失败时显示明确错误；保留“使用演示路线”按钮作为手动备用入口，不静默伪装 mock 为真实结果。
-- 候选内容接口当前采用“知乎搜索 + 全网搜索 + 规则化包装”稳定产出候选，避免模型二次筛选耗时过长；用户选定候选后，再由 Kimi 生成章节导读、知识桥和兴趣画像更新。
+- 前端主流程接入真实 `/api/*`：开始探索默认调用 AI 服务；失败时显示明确错误；保留"使用演示路线"按钮作为手动备用入口，不静默伪装 mock 为真实结果。
+- 候选内容接口当前采用"知乎搜索 + 全网搜索 + 规则化包装"稳定产出候选，避免模型二次筛选耗时过长；用户选定候选后，再由 Kimi 生成章节导读、知识桥和兴趣画像更新。
 - 新增依赖 `@mozilla/readability` 和 `jsdom`，用于任意文章链接的正文解析；新增 `package-lock.json` 锁定依赖版本。
 - 本地开发服务 `scripts/dev-server.mjs` 新增 `/api/*` 动态路由支持，便于本地测试 Vercel Serverless 函数。
 - 已用硅基流动备用模型完成 API 烟测：`/api/start`、`/api/candidates`、`/api/choose`、`/api/book` 和 `/api/cover` 均能返回结构化结果；`/api/candidates` 同时成功调用知乎搜索和全网搜索。
@@ -245,11 +262,11 @@ git push fitbook master
 - 明确 Vercel 正式入口使用 `/`，`dist/demo.html` 作为备用单文件演示；环境变量包括 `MOONSHOT_API_KEY`、`KIMI_BASE_URL`、`KIMI_MODEL` 和 `ZHIHU_ACCESS_SECRET`。
 - 新增硅基流动作为测试/备用模型服务的配置说明：`SILICONFLOW_API_KEY`、`SILICONFLOW_BASE_URL` 和 `SILICONFLOW_MODEL`；真实密钥只保存在本地 ignored 环境文件或 Vercel 环境变量。
 - 明确 Kimi 调用失败时直接给用户失败提示，不静默回退到 mock；mock 路线只作为用户手动选择的演示备用入口。
-- 按核心 AI 功能逻辑更新原型界面：落地页和起点页从“知乎链接起点”调整为“任意文章链接或粘贴文本起点”，突出 AI 知识策展人、兴趣驱动探索、候选内容选择和自动封面生成。
-- 探索页新增策展人反馈、兴趣浮现标签、候选内容三选一、全网背景/意外发现候选说明，以及第 3 站后中途生成非书的入口；进度说明改为“最多 10 站，也可以中途装订”。
+- 按核心 AI 功能逻辑更新原型界面：落地页和起点页从"知乎链接起点"调整为"任意文章链接或粘贴文本起点"，突出 AI 知识策展人、兴趣驱动探索、候选内容选择和自动封面生成。
+- 探索页新增策展人反馈、兴趣浮现标签、候选内容三选一、全网背景/意外发现候选说明，以及第 3 站后中途生成非书的入口；进度说明改为"最多 10 站，也可以中途装订"。
 - 非书详情页新增 AI 封面方案模块，并明确章节为导读式章节，包含摘要、知识桥、策展人点评和原文入口，不替代原文全文。
 - 重新生成 `dist/demo.html`，保持单文件演示版本与最新 AI 功能逻辑界面一致。
-- 新增 `docs/AI_FUNCTION_LOGIC.md`，整理非书核心 AI 功能逻辑：AI 定位为“知识策展人”，支持任意文章链接或粘贴正文作为起点，采用“方向选择 -> 候选内容选择 -> 知识桥生成”的两层选择流程，路线最多 10 站且允许中途生成非书。
+- 新增 `docs/AI_FUNCTION_LOGIC.md`，整理非书核心 AI 功能逻辑：AI 定位为"知识策展人"，支持任意文章链接或粘贴正文作为起点，采用"方向选择 -> 候选内容选择 -> 知识桥生成"的两层选择流程，路线最多 10 站且允许中途生成非书。
 - 明确真实接口返回内容边界：`zhihu_search`、`global_search` 和 `hot_list` 当前可返回标题、链接、作者/来源、互动信号、摘要或内容片段，但不应视为全文；非书章节默认呈现章节导读、摘要、知识桥、策展人点评和原文入口，不生成替代原文的完整正文。
 - 在 AI 功能逻辑中加入兴趣挖掘、情绪价值、全网搜索角色、封面自动生成和失败兜底策略；全网搜索默认用于背景补充和方向生成，最终章节主体优先使用知乎内容。
 - 按 `docs/UI_VISUALS.md` 中的关键页面视觉稿，重设计 Demo 页面 UI：落地页改为蓝白品牌首屏、价值说明、流程说明和示例路线书架；「我的非书」加入冷启动状态和 6 本示例路线；非书详情页加入大封面、统计信息、目录、作者贡献和阅读路线。
@@ -281,8 +298,8 @@ git push fitbook master
 
 每次更新代码、页面、部署方式、脚本或数据结构后，都要检查并更新本文档对应部分：
 
-- 文件新增、删除、移动：更新“文件结构”。
-- 运行命令、构建命令或部署平台变化：更新“本地运行”“构建演示文件”“部署方式”。
-- 新增功能或重要修复：更新“本次更新内容”。
+- 文件新增、删除、移动：更新"文件结构"。
+- 运行命令、构建命令或部署平台变化：更新"本地运行""构建演示文件""部署方式"。
+- 新增功能或重要修复：更新"本次更新内容"。
 - 涉及知乎 OpenAPI、密钥、发布、评论、点赞等能力：补充合规说明，并确认敏感信息不进入 Git。
 - 每次有明确项目讨论、产品决策、实现进展、验证结果或阻塞，都要在 `note/zhihuhackathon/工作日志/` 下新增一篇 Markdown 工作日志，命名格式为 `YYYY-MM-DD-HHMM-简短主题.md`。

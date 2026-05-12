@@ -2,7 +2,9 @@ import { adventure, sampleUrl } from "./mockData.js";
 
 const app = document.querySelector("#app");
 const libraryKey = "feishu-library";
+const aiConfigStorageKey = "feishu-ai-node-config";
 const logoSrc = window.FEISHU_LOGO_SRC || "assets/feishu-logo.png";
+let loadingTimer = null;
 
 const state = {
   view: "landing",
@@ -13,6 +15,7 @@ const state = {
   candidates: [],
   interestProfile: {},
   loading: "",
+  loadingStartedAt: null,
   error: "",
   useDemo: false,
   inputUrl: sampleUrl,
@@ -124,7 +127,10 @@ async function apiPost(path, payload) {
   const response = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      aiConfig: readAiConfig(),
+    }),
   });
   const data = await response.json().catch(() => null);
   if (!response.ok || !data?.ok) {
@@ -133,16 +139,51 @@ async function apiPost(path, payload) {
   return data;
 }
 
+function readAiConfig() {
+  try {
+    return JSON.parse(localStorage.getItem(aiConfigStorageKey) || "{}");
+  } catch {
+    return {};
+  }
+}
+
 function setBusy(message) {
+  if (loadingTimer) clearInterval(loadingTimer);
   state.loading = message;
+  state.loadingStartedAt = Date.now();
   state.error = "";
   render();
+  loadingTimer = setInterval(() => {
+    if (!state.loading) {
+      clearInterval(loadingTimer);
+      loadingTimer = null;
+      return;
+    }
+    render();
+  }, 1000);
 }
 
 function setError(error) {
+  if (loadingTimer) clearInterval(loadingTimer);
+  loadingTimer = null;
   state.loading = "";
+  state.loadingStartedAt = null;
   state.error = error.message || "请求失败，请稍后重试。";
   render();
+}
+
+function clearBusy() {
+  if (loadingTimer) clearInterval(loadingTimer);
+  loadingTimer = null;
+  state.loading = "";
+  state.loadingStartedAt = null;
+}
+
+function loadingText() {
+  if (!state.loading) return "";
+  const seconds = state.loadingStartedAt ? Math.max(1, Math.round((Date.now() - state.loadingStartedAt) / 1000)) : 0;
+  const suffix = seconds >= 8 ? ` 已等待 ${seconds} 秒，复杂节点可能需要更久。` : "";
+  return `${state.loading}${suffix}`;
 }
 
 function firstStepFromStart(data) {
@@ -167,7 +208,7 @@ async function refreshDirections(step = state.route[state.route.length - 1]) {
   });
   step.directions = data.directions;
   state.interestProfile = data.interestProfile || state.interestProfile;
-  state.loading = "";
+  clearBusy();
   state.error = "";
   render();
 }
@@ -306,6 +347,11 @@ function sampleBook() {
 function update(partial) {
   const previousView = state.view;
   Object.assign(state, partial);
+  if (partial.loading === "") {
+    if (loadingTimer) clearInterval(loadingTimer);
+    loadingTimer = null;
+    state.loadingStartedAt = null;
+  }
   render();
   if (partial.view && partial.view !== previousView) {
     window.scrollTo({ top: 0, left: 0 });
@@ -342,6 +388,7 @@ async function startAdventure(event) {
       activeBook: null,
       useDemo: false,
       loading: "AI 正在生成下一站方向...",
+      loadingStartedAt: Date.now(),
       error: "",
     });
     render();
@@ -364,6 +411,7 @@ function startDemoAdventure() {
     activeBook: null,
     useDemo: true,
     loading: "",
+    loadingStartedAt: null,
     error: "",
   });
 }
@@ -380,6 +428,7 @@ async function chooseDirection(direction) {
       selectedCandidate: null,
       candidates: [],
       loading: "正在搜索并筛选候选内容...",
+      loadingStartedAt: Date.now(),
       error: "",
     });
     render();
@@ -392,6 +441,7 @@ async function chooseDirection(direction) {
     update({
       candidates: data.candidates,
       loading: "",
+      loadingStartedAt: null,
       error: "",
     });
   } catch (error) {
@@ -438,6 +488,7 @@ async function goNext() {
       interestProfile: data.interestProfile || state.interestProfile,
       finished: nextRoute.length >= 10,
       loading: "",
+      loadingStartedAt: null,
       error: "",
     });
     render();
@@ -474,6 +525,7 @@ function restart() {
     articleText: "",
     useDemo: false,
     loading: "",
+    loadingStartedAt: null,
     error: "",
     finished: false,
     activeBook: null,
@@ -511,7 +563,7 @@ async function finishBook() {
     }
     const existing = readLibrary();
     writeLibrary([book, ...existing.filter((item) => item.id !== book.id)].slice(0, 12));
-    update({ view: "book", activeBook: book, finished: "book", loading: "", error: "" });
+    update({ view: "book", activeBook: book, finished: "book", loading: "", loadingStartedAt: null, error: "" });
   } catch (error) {
     setError(error);
   }
@@ -636,7 +688,7 @@ function renderStart() {
             <textarea id="article-input" rows="5" placeholder="粘贴标题、摘要或正文片段，也可以只放你最有感觉的一段。">${state.articleText}</textarea>
           </div>
           <p class="${detected.ok ? "hint good" : "hint"}">${detected.ok ? `已识别：${detected.label}` : state.selectedDirection || detected.label}</p>
-          ${state.loading ? `<p class="status-message">${state.loading}</p>` : ""}
+          ${state.loading ? `<p class="status-message">${loadingText()}</p>` : ""}
           ${state.error ? `<p class="error-message">${state.error}</p>` : ""}
           <div class="start-ai-notes">
             <span>AI 先提炼兴趣</span>
@@ -708,7 +760,7 @@ function renderAdventure() {
           <button class="ghost-button" id="restart-button">重新开始</button>
         </div>
       </header>
-      ${state.loading ? `<div class="status-banner">${state.loading}</div>` : ""}
+      ${state.loading ? `<div class="status-banner">${loadingText()}</div>` : ""}
       ${state.error ? `<div class="error-banner">${state.error}</div>` : ""}
       <section class="progress-panel" aria-label="探索进度">
         <div class="progress-copy">

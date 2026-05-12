@@ -1,33 +1,25 @@
 import { methodGuard, readJson, sendJson, handleApiError } from "../lib/http.js";
 import { callModelJson } from "../lib/model.js";
-import { compactRoute, curatorSystem } from "../lib/prompts.js";
+import {
+  curatorSystem,
+  getNodeConfig,
+  nodePrompt,
+  buildDirectionsUserPayload,
+} from "../lib/prompts.js";
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res)) return;
 
   try {
     const body = await readJson(req);
+    const nodeConfig = getNodeConfig(body, "directions");
     const result = await callModelJson({
-      system: curatorSystem,
-      user: JSON.stringify({
-        task: "基于当前站和已走路线生成 3 个下一站方向。必须包含一个略微跳出舒适区的意外发现选项。",
-        requiredShape: {
-          directions: [
-            {
-              label: "string",
-              text: "string",
-              reason: "string",
-              zhihuQuery: "string",
-              globalQuery: "string",
-              directionType: "深入|跨界|人物作品案例|观点挑战|回到生活|意外发现",
-            },
-          ],
-          interestProfile: "object",
-          curatorMessage: "string",
-        },
+      system: nodePrompt(curatorSystem, nodeConfig),
+      nodeConfig,
+      user: buildDirectionsUserPayload({
         currentStep: body.currentStep,
-        route: compactRoute(body.route),
-        interestProfile: body.interestProfile || {},
+        route: body.route,
+        interestProfile: body.interestProfile,
       }),
     });
 

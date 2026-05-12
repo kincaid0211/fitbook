@@ -1,44 +1,25 @@
 import { methodGuard, readJson, sendJson, handleApiError } from "../lib/http.js";
 import { parseStartContent } from "../lib/parser.js";
 import { callModelJson } from "../lib/model.js";
-import { curatorSystem } from "../lib/prompts.js";
+import {
+  curatorSystem,
+  getNodeConfig,
+  nodePrompt,
+  buildStartUserPayload,
+} from "../lib/prompts.js";
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res)) return;
 
   try {
     const body = await readJson(req);
+    const nodeConfig = getNodeConfig(body, "start");
     const parsed = await parseStartContent({ url: body.url || "", text: body.text || "" });
 
     const result = await callModelJson({
-      system: curatorSystem,
-      user: JSON.stringify({
-        task: "理解用户起点内容，输出非书探索第一站。",
-        requiredShape: {
-          title: "string",
-          summary: "string",
-          concepts: ["string"],
-          peopleWorksCases: ["string"],
-          controversies: ["string"],
-          extensionDirections: ["string"],
-          searchKeywords: ["string"],
-          interestProfile: {
-            preferredAngles: ["string"],
-            curiositySignals: ["string"],
-            explorationStyle: "string",
-          },
-          curatorMessage: "string",
-        },
-        content: {
-          source: parsed.source,
-          title: parsed.title,
-          author: parsed.author,
-          url: parsed.url,
-          contentExcerpt: parsed.contentExcerpt,
-          isFullText: parsed.isFullText,
-          basedOnUserText: parsed.basedOnUserText,
-        },
-      }),
+      system: nodePrompt(curatorSystem, nodeConfig),
+      nodeConfig,
+      user: buildStartUserPayload({ parsed }),
     });
 
     const data = result.data;
