@@ -39,13 +39,13 @@ const sampleBooks = [
   {
     id: "sample_music",
     title: adventure.title,
-    subtitle: "从情绪、记忆到认知茧房的一条主动阅读路线",
+    subtitle: "从情绪、记忆到认知茧房的一本主动阅读非书",
     style: adventure.style,
     tags: ["心理学", "音乐", "情绪"],
     steps: adventure.steps,
-    createdAt: "示例路线",
+    createdAt: "示例非书",
     preface:
-      "这是你从一个知乎问题出发读出的路线。它记录了你如何从音乐、情绪、记忆一路读到认知茧房。",
+      "这是你从一个知乎问题出发读出的非书。它记录了你如何从音乐、情绪、记忆一路读到认知茧房。",
     cover: "music",
     authorCount: 8,
   },
@@ -56,7 +56,7 @@ const sampleBooks = [
     style: "观点挑战",
     tags: ["认知科学", "思维", "成长"],
     steps: adventure.steps,
-    createdAt: "示例路线",
+    createdAt: "示例非书",
     preface: "这本非书从熟悉观点出发，沿着反例、争议和跨领域解释，帮你看见问题的另一面。",
     cover: "cocoon",
     authorCount: 7,
@@ -68,7 +68,7 @@ const sampleBooks = [
     style: "公共讨论",
     tags: ["社会议题", "观点", "讨论"],
     steps: adventure.steps,
-    createdAt: "示例路线",
+    createdAt: "示例非书",
     preface: "这本非书把公共议题拆成多个阅读角度，让你在不同作者的表达之间建立判断。",
     cover: "public",
     authorCount: 9,
@@ -80,7 +80,7 @@ const sampleBooks = [
     style: "创作方法",
     tags: ["写作", "方法", "灵感"],
     steps: adventure.steps,
-    createdAt: "示例路线",
+    createdAt: "示例非书",
     preface: "这本非书把一次好奇变成选题线索，帮助创作者从问题、案例和评论里找到表达入口。",
     cover: "writer",
     authorCount: 6,
@@ -92,7 +92,7 @@ const sampleBooks = [
     style: "热榜观察",
     tags: ["热榜", "社会", "数据"],
     steps: adventure.steps,
-    createdAt: "示例路线",
+    createdAt: "示例非书",
     preface: "这本非书从热榜问题出发，追踪观点如何扩散、转向和沉淀成公共讨论。",
     cover: "hot",
     authorCount: 8,
@@ -104,7 +104,7 @@ const sampleBooks = [
     style: "审美辨析",
     tags: ["音乐", "审美", "文化"],
     steps: adventure.steps,
-    createdAt: "示例路线",
+    createdAt: "示例非书",
     preface: "这本非书从一个常见判断出发，把音乐品味放回历史、社会和个人经验中重新理解。",
     cover: "classic",
     authorCount: 7,
@@ -197,6 +197,8 @@ function firstStepFromStart(data) {
     directions: [],
     sourceType: data.basedOnUserText ? "user_text" : "external",
     curatorNote: data.curatorMessage || "",
+    needsUserText: Boolean(data.needsUserText),
+    parseWarning: data.parseWarning || "",
   };
 }
 
@@ -250,7 +252,7 @@ function bookCard(book) {
         <div class="tag-row compact">${book.tags.slice(0, 3).map((tag) => `<span>${tag}</span>`).join("")}</div>
         ${avatarGroup(authorCount(book))}
         <div class="book-card-footer">
-          <span>${book.steps.length} 站</span>
+          <span>${book.steps.length} 章</span>
           <span>${authorCount(book)} 位作者</span>
         </div>
       </div>
@@ -315,7 +317,7 @@ function makeBook() {
   return {
     id: `book_${Date.now()}`,
     title: chapterCount < adventure.steps.length ? "我读出的一本短非书" : adventure.title,
-    subtitle: chapterCount < adventure.steps.length ? `从一个兴趣起点出发，完成 ${chapterCount} 站策展阅读。` : adventure.subtitle,
+    subtitle: chapterCount < adventure.steps.length ? `从一个兴趣起点出发，收入 ${chapterCount} 章策展阅读。` : adventure.subtitle,
     style: adventure.style,
     tags: uniqueConcepts.length > 0 ? uniqueConcepts : adventure.tags,
     steps: state.route,
@@ -343,7 +345,7 @@ function sampleBook() {
     steps: adventure.steps,
     createdAt: "示例非书",
     preface:
-      "这是一条示例非书路线，用来展示用户完成 10 站探索后，如何把阅读过程沉淀成可保存、可分享的知识读本。",
+      "这是一本示例非书，用来展示用户如何把一组阅读过程沉淀成可保存、可分享的知识读本。",
   };
 }
 
@@ -356,7 +358,7 @@ function update(partial) {
     state.loadingStartedAt = null;
   }
   render();
-  if (partial.view && partial.view !== previousView) {
+  if ((partial.view && partial.view !== previousView) || Object.prototype.hasOwnProperty.call(partial, "currentIndex")) {
     window.scrollTo({ top: 0, left: 0 });
   }
 }
@@ -390,7 +392,7 @@ async function startAdventure(event) {
       finished: false,
       activeBook: null,
       useDemo: false,
-      loading: "AI 正在生成下一站方向...",
+      loading: "AI 正在生成下一章方向...",
       loadingStartedAt: Date.now(),
       error: "",
     });
@@ -421,7 +423,9 @@ function startDemoAdventure() {
 
 async function chooseDirection(direction) {
   if (state.useDemo) {
-    update({ selectedDirection: direction.text, selectedCandidate: null });
+    const nextStep = adventure.steps[state.currentIndex + 1];
+    const candidates = candidateOptions(nextStep);
+    update({ selectedDirection: direction, selectedCandidate: candidates[0] || null, candidates });
     return;
   }
 
@@ -443,6 +447,7 @@ async function chooseDirection(direction) {
     });
     update({
       candidates: data.candidates,
+      selectedCandidate: data.candidates?.[0] || null,
       loading: "",
       loadingStartedAt: null,
       error: "",
@@ -454,6 +459,10 @@ async function chooseDirection(direction) {
 
 function chooseCandidate(candidate) {
   update({ selectedCandidate: candidate });
+}
+
+function closeCandidateModal() {
+  update({ candidates: [], selectedCandidate: null, selectedDirection: null });
 }
 
 async function goNext() {
@@ -473,10 +482,19 @@ async function goNext() {
   if (!state.selectedCandidate) return;
 
   try {
-    setBusy("正在生成章节导读、知识桥和下一站方向...");
+    const selectedCandidate = state.selectedCandidate;
+    Object.assign(state, {
+      selectedDirection: null,
+      selectedCandidate: null,
+      candidates: [],
+      loading: "正在生成章节导读、衔接关系和下一章方向...",
+      loadingStartedAt: Date.now(),
+      error: "",
+    });
+    render();
     const data = await apiPost("/api/choose", {
       previousStep: state.route[state.currentIndex],
-      candidate: state.selectedCandidate,
+      candidate: selectedCandidate,
       route: state.route,
       interestProfile: state.interestProfile,
     });
@@ -500,9 +518,10 @@ async function goNext() {
       error: "",
     });
     render();
+    window.scrollTo({ top: 0, left: 0 });
 
     if (!state.finished && !data.directions?.length) {
-      setBusy("AI 正在生成下一站方向...");
+      setBusy("AI 正在生成下一章方向...");
       await refreshDirections(data.step);
     }
   } catch (error) {
@@ -624,7 +643,7 @@ function renderLanding() {
         <div class="hero-copy">
           <p class="eyebrow">知乎启发式阅读 demo</p>
           <h1>读出自己的书。</h1>
-          <p class="lead">从任意一篇文章出发，让 AI 知识策展人陪你选择下一站，在知乎与全网内容中生成自己的知识读本。</p>
+          <p class="lead">从任意一篇文章出发，让 AI 知识策展人陪你选择下一章，在知乎与全网内容中生成自己的知识读本。</p>
           <div class="hero-actions">
             <button id="hero-start">开始第一本非书</button>
             <button class="ghost-button" id="hero-library">看看示例</button>
@@ -639,7 +658,7 @@ function renderLanding() {
         <aside class="hero-book-preview">
           ${coverMarkup(featured, "large")}
           <div class="stat-stack">
-            <span><strong>10</strong> 站路线</span>
+            <span><strong>3+</strong> 章即可成书</span>
             <span><strong>${authorCount(featured)}</strong> 位作者</span>
             <span><strong>${conceptCount(featured)}</strong> 个概念</span>
             <span>可分享</span>
@@ -654,8 +673,8 @@ function renderLanding() {
         </div>
         <div class="feature-grid" aria-label="核心玩法">
           <article><span class="feature-icon">01</span><strong>从文章到兴趣</strong><p>先理解你给出的文章，再提炼可继续探索的概念、争议和案例。</p></article>
-          <article><span class="feature-icon">02</span><strong>从推荐到策展</strong><p>AI 给出方向和候选，你用选择把路线读成自己的样子。</p></article>
-          <article><span class="feature-icon">03</span><strong>从阅读到非书</strong><p>最多 10 站，也可以中途结束，生成导读式知识读本。</p></article>
+          <article><span class="feature-icon">02</span><strong>从推荐到策展</strong><p>AI 给出方向和候选，你用选择把章节编成自己的样子。</p></article>
+          <article><span class="feature-icon">03</span><strong>从阅读到非书</strong><p>写到 3 章即可装订，也可以继续收入新的章节。</p></article>
         </div>
       </section>
 
@@ -667,7 +686,7 @@ function renderLanding() {
         <div class="flow-grid">
           <article><span>1</span><strong>放入起点</strong><p>输入文章链接，或直接粘贴标题、摘要和正文片段。</p></article>
           <article><span>2</span><strong>选择方向</strong><p>在深入、跨界、人物、观点挑战和意外发现中前进。</p></article>
-          <article><span>3</span><strong>挑选候选</strong><p>知乎内容优先，全网搜索补充背景，每一站都解释连接理由。</p></article>
+          <article><span>3</span><strong>挑选候选</strong><p>知乎内容优先，全网搜索补充背景，每一章都解释连接理由。</p></article>
           <article><span>4</span><strong>装订成书</strong><p>生成封面概念、目录、章节导读和策展人点评。</p></article>
         </div>
       </section>
@@ -675,7 +694,7 @@ function renderLanding() {
       <section class="section-block sample-shelf">
         <div class="section-heading row">
           <div>
-            <p class="eyebrow">示例路线</p>
+            <p class="eyebrow">示例非书</p>
             <h2>先看看你可以读出什么书。</h2>
           </div>
           <button class="ghost-button" id="sample-library">查看我的非书</button>
@@ -701,7 +720,7 @@ function renderStart() {
         <div class="hero compact-hero">
           <p class="eyebrow">开始一次新的非书探索</p>
           <h1>从任意一篇文章开始。</h1>
-          <p class="lead">输入文章链接，或直接粘贴一段内容。非书会先理解起点，再用知乎搜索和全网背景为你策展下一站。</p>
+          <p class="lead">输入文章链接，或直接粘贴一段内容。非书会先理解起点，再用知乎搜索和全网背景为你策展下一章。</p>
         </div>
         <form class="start-panel" id="start-form">
           <label for="url-input">文章链接</label>
@@ -719,9 +738,9 @@ function renderStart() {
           <div class="start-ai-notes">
             <span>AI 先提炼兴趣</span>
             <span>章节优先导向知乎原文</span>
-            <span>可在第 3 站后生成非书</span>
+            <span>写到第 3 章即可装订</span>
           </div>
-          <button class="ghost-button demo-route-button" type="button" id="demo-route-button">使用演示路线</button>
+          <button class="ghost-button demo-route-button" type="button" id="demo-route-button">使用演示非书</button>
         </form>
       </div>
     </section>
@@ -744,129 +763,226 @@ function candidateOptions(nextStep) {
   return [
     {
       source: "知乎优先",
+      sourceLabel: "知乎文章",
       title: nextStep.title,
+      curatedTitle: nextStep.title,
       summary: nextStep.summary,
-      reason: "这条候选能和当前问题形成最清晰的知识桥，适合作为下一章导读入口。",
+      connection: "它能接住当前章节留下的问题，把阅读推进到更具体的经验里。",
+      readerGain: "读完这一章，你会更清楚这条线索为什么值得继续，也能看到它如何改变后面的阅读方向。",
+      fitTags: nextStep.concepts.slice(0, 3),
+      trustSignals: ["知乎文章", `作者 ${nextStep.author}`, "相关度高", "可作为下一章"],
     },
     {
       source: "全网背景",
       title: `${nextStep.concepts[0]}的背景补充`,
+      curatedTitle: `从${nextStep.concepts[0]}补足上下文`,
       summary: `补充理解"${nextStep.concepts[0]}"相关概念，帮助你在进入下一篇知乎内容前建立上下文。`,
-      reason: "全网搜索只作为背景材料，不替代最终章节原文。",
+      connection: "它把当前章的核心概念放回更大的背景里，帮助下一章读得更稳。",
+      readerGain: "读完这一章，你会先补齐必要背景，再决定是否把非书继续带回知乎内容。",
+      fitTags: ["背景补充", nextStep.concepts[0], "理解铺垫"].filter(Boolean),
+      trustSignals: ["全网背景", "资料整理", "相关度较高", "可作补充"],
     },
     {
       source: "意外发现",
       title: `从${nextStep.concepts[1] || nextStep.concepts[0]}换一个角度`,
-      summary: "略微跳出当前路线，让兴趣不只向熟悉方向收缩。",
-      reason: "保留一点陌生感，让阅读路线仍然有发现的快乐。",
+      curatedTitle: `换个角度理解${nextStep.concepts[1] || nextStep.concepts[0]}`,
+      summary: "略微跳出当前章节线索，让兴趣不只向熟悉方向收缩。",
+      connection: "它不沿着最直的方向走，而是让这本非书保留一点新的发现。",
+      readerGain: "读完这一章，你可能会获得一个旁支视角，重新理解前面章节里看似确定的问题。",
+      fitTags: ["意外发现", "旁支视角", "重新理解"],
+      trustSignals: ["资料补充", "方向匹配", "保留发现"],
     },
   ];
 }
 
+function directionTitle(direction) {
+  if (!direction) return "";
+  return typeof direction === "string" ? direction : direction.label || direction.text || "";
+}
+
+function directionText(direction) {
+  if (!direction) return "";
+  return typeof direction === "string" ? direction : direction.text || direction.label || "";
+}
+
+function candidateTitle(candidate) {
+  return candidate.curatedTitle || candidate.title || "未命名章节";
+}
+
+function candidateSignals(candidate) {
+  const signals = candidate.trustSignals?.length
+    ? candidate.trustSignals
+    : [
+        candidate.sourceLabel || candidate.source || "资料来源",
+        candidate.author ? `作者 ${candidate.author}` : "",
+        candidate.voteUpCount ? `${candidate.voteUpCount} 赞同` : "",
+        candidate.commentCount ? `${candidate.commentCount} 评论` : "",
+      ].filter(Boolean);
+  return signals.slice(0, 6).map((signal) => `<span>${signal}</span>`).join("");
+}
+
+function candidateTags(candidate) {
+  const tags = candidate.fitTags?.length ? candidate.fitTags : candidate.concepts || [];
+  return tags.slice(0, 3).map((tag) => `<span>${tag}</span>`).join("");
+}
+
+function renderCandidateModal(candidates, selectedDirectionText) {
+  if (!state.selectedDirection || !candidates.length) return "";
+  return `
+    <div class="modal-backdrop" role="presentation">
+      <section class="chapter-modal" role="dialog" aria-modal="true" aria-labelledby="chapter-modal-title">
+        <button class="modal-close" id="candidate-modal-close" type="button" aria-label="关闭选择下一章">×</button>
+        <header class="chapter-modal-header">
+          <div>
+            <p class="eyebrow">关键选择</p>
+            <h2 id="chapter-modal-title">选择下一章</h2>
+          </div>
+          <p>你选择了「${selectedDirectionText}」。下面 3 章都能接住当前内容，但会把这本非书带向不同的阅读重点。</p>
+        </header>
+        <div class="chapter-choice-list" role="radiogroup" aria-label="选择下一章">
+          ${candidates
+            .map(
+              (candidate, index) => `
+                <button class="chapter-choice ${state.selectedCandidate?.title === candidate.title ? "selected" : ""}" type="button" data-candidate="${index}" role="radio" aria-checked="${state.selectedCandidate?.title === candidate.title}">
+                  <div class="signal-row">${candidateSignals(candidate)}</div>
+                  <strong>${candidateTitle(candidate)}</strong>
+                  <p><b>如何接上这一章：</b>${candidate.connection || candidate.bridgePreview || "它能接住当前章节留下的问题，继续推进这本非书的阅读线索。"}</p>
+                  <p><b>读完能获得什么：</b>${candidate.readerGain || candidate.summary || "你会获得一个更清楚的理解入口，帮助判断这条线索是否值得继续。"}</p>
+                  <div class="choice-footer">
+                    <div class="tag-row compact">${candidateTags(candidate)}</div>
+                    ${state.selectedCandidate?.title === candidate.title ? `<span class="selected-note">已选择为下一章</span>` : ""}
+                  </div>
+                </button>
+              `,
+            )
+            .join("")}
+        </div>
+        <footer class="chapter-modal-actions">
+          <button class="ghost-button" id="change-direction-button" type="button">换一个方向</button>
+          <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidate ? "" : "disabled"}>加入为下一章</button>
+        </footer>
+      </section>
+    </div>
+  `;
+}
+
 function renderAdventure() {
   const step = state.route[state.currentIndex] || state.route[state.route.length - 1];
-  const maxSteps = 10;
-  const progressLabel = `${state.currentIndex + 1} / ${maxSteps}`;
-  const progressPercent = Math.min(100, Math.round((state.route.length / maxSteps) * 100));
   const nextStep = state.useDemo ? adventure.steps[state.currentIndex + 1] : null;
   const canFinishEarly = state.route.length >= 3;
-  const candidates = state.useDemo ? candidateOptions(nextStep) : state.candidates;
-  const selectedDirectionText =
-    typeof state.selectedDirection === "string" ? state.selectedDirection : state.selectedDirection?.text;
+  const candidates = state.useDemo ? state.candidates : state.candidates;
+  const selectedDirectionText = directionTitle(state.selectedDirection) || directionText(state.selectedDirection);
+  const modalMarkup = renderCandidateModal(candidates, selectedDirectionText);
 
   app.innerHTML = `
     <section class="screen adventure-screen">
       <header class="app-header">
         <div>
-          <p class="eyebrow">第 ${progressLabel} 站 · AI 知识策展人</p>
-          <h1>${step.title}</h1>
+          <p class="eyebrow">非书 · 把一组文章编成一本自己的短书</p>
+          <h1>你的非书已写到第 ${state.route.length} 章</h1>
+          <p class="header-subtitle">${canFinishEarly ? "这本非书已经可以成书，你也可以继续收入新的章节，让它变得更完整。" : "继续收入章节，写到第 3 章后就可以装订成书。"}</p>
         </div>
         <div class="header-actions">
-          ${canFinishEarly && !state.finished ? `<button class="ghost-button" id="early-book-button">现在生成非书</button>` : ""}
+          ${canFinishEarly && !state.finished ? `<button class="ghost-button" id="early-book-button">装订这本非书</button>` : ""}
           <button class="ghost-button" id="restart-button">重新开始</button>
         </div>
       </header>
       ${state.loading ? `<div class="status-banner">${loadingText()}</div>` : ""}
       ${state.error ? `<div class="error-banner">${state.error}</div>` : ""}
-      <section class="progress-panel" aria-label="探索进度">
-        <div class="progress-copy">
-          <strong>最多 10 站，也可以中途装订</strong>
-          <span>已完成 ${progressPercent}% · 当前路线已有 ${state.route.length} 个章节导读</span>
+      <section class="chapter-status" aria-label="成书状态">
+        <div class="chapter-marks">
+          ${[1, 2, 3]
+            .map((count) => `<span class="${state.route.length >= count ? "complete" : ""}">第 ${count} 章</span>`)
+            .join("")}
         </div>
-        <div class="progress-track"><div style="width: ${progressPercent}%"></div></div>
+        <strong class="${canFinishEarly ? "book-ready" : "book-pending"}">${canFinishEarly ? "已可成书" : `还需 ${3 - state.route.length} 章`}</strong>
       </section>
 
-      <div class="layout">
-        <article class="reading-card">
-          <div class="article-meta">来源：${step.author} · 摘要级导读</div>
-          <p>${step.summary}</p>
-          <div class="tag-row">${step.concepts.map((tag) => `<span>${tag}</span>`).join("")}</div>
-          <div class="bridge">
-            <strong>知识桥</strong>
-            <p>${step.bridge}</p>
+      <div class="chapter-layout">
+        <aside class="chapter-toc" aria-label="目录">
+          <h2>目录</h2>
+          <div class="chapter-toc-list">
+            ${state.route
+              .map(
+                (item, index) => `
+                  <div class="chapter-toc-item ${index === state.currentIndex ? "active" : ""}">
+                    <span>${index + 1}</span>
+                    <p>第 ${index + 1} 章<br><strong>${item.title}</strong></p>
+                  </div>
+                `,
+              )
+              .join("")}
           </div>
-          <div class="curator-note">
-            <strong>策展人反馈</strong>
-            <p>你正在把这个问题从"读到一篇内容"推进成"发现一组关系"。下一步可以顺着兴趣走，也可以故意拐向一个陌生角度。</p>
-          </div>
-          <div class="interest-panel">
-            <strong>正在浮现的兴趣</strong>
-            <div class="tag-row compact">
-              <span>情绪机制</span><span>作品理解</span><span>生活经验</span><span>意外发现</span>
-            </div>
-          </div>
-        </article>
-
-        <aside class="side-panel">
-          <h2>先选一个方向</h2>
-          ${
-            step.directions.length
-              ? `<div class="direction-list">${step.directions
-                  .map(
-                    (direction, index) => `
-                      <button class="direction ${selectedDirectionText === direction.text ? "selected" : ""}" data-index="${index}">
-                        <span>${direction.label}</span>
-                        ${direction.text}
-                      </button>
-                    `,
-                  )
-                  .join("")}</div>`
-              : `<p class="muted">已抵达第 10 站，可以生成非书。</p>`
-          }
-          ${state.selectedDirection && candidates.length ? `
-            <div class="candidate-list">
-              <p class="eyebrow">再选择候选内容</p>
-              ${candidates
-                .map(
-                  (candidate, index) => `
-                    <button class="candidate-card ${state.selectedCandidate?.title === candidate.title ? "selected" : ""}" data-candidate="${index}">
-                      <span>${candidate.sourceLabel || candidate.source}</span>
-                      <strong>${candidate.title}</strong>
-                      <small>${candidate.summary}</small>
-                      <em>${candidate.reason}</em>
-                    </button>
-                  `,
-                )
-                .join("")}
-              ${state.selectedCandidate ? `<button id="next-button" class="primary-wide">加入路线，生成知识桥</button>` : ""}
-            </div>
-          ` : ""}
-          ${state.finished ? `<button id="book-button" class="primary-wide">生成并保存非书</button>` : ""}
+          <p class="chapter-toc-note">3 章以上即可装订</p>
         </aside>
-      </div>
 
-      <section class="route-strip">
-        ${state.route
-          .map(
-            (item, index) => `
-              <div class="route-node ${index === state.currentIndex ? "active" : ""}">
-                <span>${index + 1}</span>
-                <p>${item.title}</p>
+        <main class="chapter-flow">
+          <section class="flow-step">
+            <div class="step-heading">
+              <span>1</span>
+              <div>
+                <h2>理解这一章的精彩与衔接</h2>
+                <p>这里展示的是章节导读和衔接判断，不替代原文全文。</p>
               </div>
-            `,
-          )
-          .join("")}
-      </section>
+            </div>
+            <article class="reading-card chapter-reading-card">
+              <div class="article-meta">知乎内容 · ${step.author || "来源待确认"} · 已整理为第 ${state.currentIndex + 1} 章</div>
+              <h3>${step.title}</h3>
+              ${
+                step.needsUserText
+                  ? `<p class="reading-note">当前链接未能读取完整正文，已先作为阅读入口生成导读。粘贴原文片段后，非书会给出更准确的章节理解。</p>`
+                  : ""
+              }
+              <div class="chapter-insight">
+                <strong>这一章精彩在哪里</strong>
+                <p>${step.summary}</p>
+              </div>
+              <div class="chapter-insight">
+                <strong>它如何接住上一章</strong>
+                <p>${step.bridge || "这是这本非书的起点，它会决定后续章节如何展开。"}</p>
+              </div>
+              <div class="chapter-insight">
+                <strong>它可能引向哪里</strong>
+                <p>${step.directions?.[0]?.reason || "接下来可以继续深入，也可以回到生活经验，选择一个方向后我会整理适合作为下一章的内容。"}</p>
+              </div>
+              <div class="tag-row">${(step.concepts || []).map((tag) => `<span>${tag}</span>`).join("")}</div>
+            </article>
+          </section>
+
+          <section class="flow-step">
+            <div class="step-heading">
+              <span>2</span>
+              <div>
+                <h2>下一章想往哪里写？</h2>
+                <p>选择一个方向，我会直接为你整理可以收入非书的下一章。</p>
+              </div>
+            </div>
+            ${
+              step.directions?.length
+                ? `<div class="direction-list chapter-direction-list">${step.directions
+                    .map(
+                      (direction, index) => `
+                        <button class="direction ${selectedDirectionText === directionTitle(direction) || selectedDirectionText === direction.text ? "selected" : ""}" type="button" data-index="${index}">
+                          <span>${direction.label}</span>
+                          <strong>${direction.text}</strong>
+                          ${direction.reason ? `<small>${direction.reason}</small>` : ""}
+                        </button>
+                      `,
+                    )
+                    .join("")}</div>`
+                : state.loading
+                  ? `<div class="empty-next-step"><p>下一章方向正在整理中，稍等片刻就可以继续选择。</p></div>`
+                  : canFinishEarly
+                    ? `<div class="empty-next-step">
+                        <p>这本非书已经可以装订，也可以稍后继续收入新的章节。</p>
+                        <button id="book-button" class="primary-wide" type="button">装订这本非书</button>
+                      </div>`
+                    : `<div class="empty-next-step"><p>暂时没有生成可选方向，请重新开始或稍后重试。</p></div>`
+            }
+          </section>
+        </main>
+      </div>
+      ${modalMarkup}
     </section>
   `;
 
@@ -878,6 +994,11 @@ function renderAdventure() {
   document.querySelectorAll(".candidate-card").forEach((button) => {
     button.addEventListener("click", () => chooseCandidate(candidates[Number(button.dataset.candidate)]));
   });
+  document.querySelectorAll(".chapter-choice").forEach((button) => {
+    button.addEventListener("click", () => chooseCandidate(candidates[Number(button.dataset.candidate)]));
+  });
+  document.querySelector("#candidate-modal-close")?.addEventListener("click", closeCandidateModal);
+  document.querySelector("#change-direction-button")?.addEventListener("click", closeCandidateModal);
   document.querySelector("#next-button")?.addEventListener("click", goNext);
   document.querySelector("#book-button")?.addEventListener("click", finishBook);
 }
@@ -898,7 +1019,7 @@ function renderBook(book = state.activeBook || sampleBook()) {
           <p class="lead">${book.subtitle}</p>
           <div class="tag-row">${book.tags.map((tag) => `<span>${tag}</span>`).join("")}</div>
           <div class="detail-stats">
-            <span><strong>${book.steps.length}</strong>站</span>
+            <span><strong>${book.steps.length}</strong>章</span>
             <span><strong>${authorCount(book)}</strong>位作者</span>
             <span><strong>${conceptCount(book)}</strong>个概念</span>
             <span>导读式章节</span>
@@ -917,13 +1038,13 @@ function renderBook(book = state.activeBook || sampleBook()) {
         </article>
         <article class="cover-concept-panel">
           <h2>AI 封面方案</h2>
-          <p>${book.coverConcept || "封面以路线主题为核心，生成主视觉关键词、色彩和构图，用于后续图片生成或稳定封面组件展示。"}</p>
+          <p>${book.coverConcept || "封面以章节主题为核心，生成主视觉关键词、色彩和构图，用于后续图片生成或稳定封面组件展示。"}</p>
           <div class="tag-row compact"><span>自动封面概念</span><span>可生成图片</span><span>适合分享</span></div>
         </article>
         <article class="toc">
           <div class="section-heading row compact-heading">
             <h2>目录</h2>
-            <span class="soft-note">查看全部 ${book.steps.length} 站</span>
+            <span class="soft-note">查看全部 ${book.steps.length} 章</span>
           </div>
           <div class="chapter-list">
             ${book.steps
@@ -962,7 +1083,7 @@ function renderBook(book = state.activeBook || sampleBook()) {
           </div>
         </article>
         <aside class="route-timeline">
-          <h2>你的阅读路线</h2>
+          <h2>你的章节线索</h2>
           ${book.steps
             .map(
               (step, index) => `
@@ -973,7 +1094,7 @@ function renderBook(book = state.activeBook || sampleBook()) {
               `,
             )
             .join("")}
-          <button class="ghost-button">查看完整路线图</button>
+          <button class="ghost-button">查看完整章节图</button>
         </aside>
       </section>
     </section>
@@ -1019,9 +1140,9 @@ function renderLibrary() {
         <div class="section-heading row">
           <div>
             <p class="eyebrow">示例</p>
-            <h2>先看看这些示例路线</h2>
+            <h2>先看看这些示例非书</h2>
           </div>
-          <span class="soft-note">示例路线来自知乎优质内容，用来展示探索灵感。</span>
+          <span class="soft-note">示例非书来自知乎优质内容，用来展示探索灵感。</span>
         </div>
         <div class="shelf-grid">
           ${sampleBooks.map(bookCard).join("")}

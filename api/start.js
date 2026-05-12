@@ -32,6 +32,8 @@ export default async function handler(req, res) {
       contentExcerpt: parsed.contentExcerpt,
       isFullText: parsed.isFullText,
       basedOnUserText: parsed.basedOnUserText,
+      needsUserText: parsed.needsUserText,
+      parseWarning: parsed.parseWarning || "",
       understanding: {
         summary: data.summary || parsed.contentExcerpt.slice(0, 180),
         concepts: Array.isArray(data.concepts) ? data.concepts.slice(0, 6) : [],

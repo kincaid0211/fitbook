@@ -25,9 +25,9 @@ export default async function handler(req, res) {
 
     const directions = Array.isArray(result.data.directions) ? result.data.directions.slice(0, 3) : [];
     if (directions.length < 3) {
-      const error = new Error("AI 没有生成足够的下一站方向。");
+      const error = new Error("AI 没有生成足够的下一章方向。");
       error.statusCode = 502;
-      error.publicMessage = "下一站方向生成失败，请重试。";
+      error.publicMessage = "下一章方向生成失败，请重试。";
       throw error;
     }
 
@@ -40,6 +40,6 @@ export default async function handler(req, res) {
       provider: result.provider,
     });
   } catch (error) {
-    handleApiError(res, error, "下一站方向生成失败。");
+    handleApiError(res, error, "下一章方向生成失败。");
   }
 }

@@ -9,17 +9,17 @@ export const aiNodeDefaults = {
     temperature: 0.25,
     timeoutSeconds: 60,
     prompt:
-      "理解用户给出的文章或文本片段，提炼摘要、关键概念、争议点、可延展方向和初始兴趣画像。输出要短、准、适合开启阅读路线。",
+      "理解用户给出的文章或文本片段，提炼摘要、关键概念、争议点、可延展方向和初始兴趣画像。输出要短、准、适合开启章节线索。",
   },
   directions: {
-    label: "下一站方向",
-    description: "基于当前站内容、路线历史和兴趣画像，生成 3 个互相区分的下一站探索方向，至少包含一个意外发现选项。",
+    label: "下一章方向",
+    description: "基于当前章内容、已有章节线索和兴趣画像，生成 3 个互相区分的下一章方向，至少包含一个意外发现选项。",
     provider: "siliconflow",
     model: "Pro/moonshotai/Kimi-K2.6",
     temperature: 0.35,
     timeoutSeconds: 45,
     prompt:
-      "基于当前站、路线历史和兴趣画像，生成 3 个下一站方向。方向必须互相区分，并至少包含一个意外发现选项。",
+      "基于当前章、已有章节线索和兴趣画像，生成 3 个下一章方向。方向必须互相区分，并至少包含一个意外发现选项。",
   },
   choose: {
     label: "章节导读与知识桥",
@@ -33,13 +33,13 @@ export const aiNodeDefaults = {
   },
   book: {
     label: "非书生成",
-    description: "把已完成的阅读路线包装成一本「非书」，生成书名、序言、目录、章节导读、路线标签和探索总结。",
+    description: "把已完成的章节线索包装成一本「非书」，生成书名、序言、目录、章节导读、线索标签和阅读总结。",
     provider: "siliconflow",
     model: "Pro/moonshotai/Kimi-K2.6",
     temperature: 0.45,
     timeoutSeconds: 90,
     prompt:
-      "把已完成路线包装成一本非书，生成书名、副标题、序言、目录、章节导读、路线标签和探索总结。不要补造未读章节。",
+      "把已完成章节包装成一本非书，生成书名、副标题、序言、目录、章节导读、线索标签和阅读总结。不要补造未读章节。",
   },
   cover: {
     label: "封面方案",

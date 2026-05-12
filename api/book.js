@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     const nodeConfig = getNodeConfig(body, "book");
     const route = Array.isArray(body.route) ? body.route : [];
     if (route.length < 1) {
-      const error = new Error("路线为空，无法生成非书。");
+      const error = new Error("还没有可装订的章节，无法生成非书。");
       error.statusCode = 400;
       error.publicMessage = error.message;
       throw error;
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       book: {
         id: `book_${Date.now()}`,
         title: result.data.title || "我读出的一本非书",
-        subtitle: result.data.subtitle || `一条 ${route.length} 站的策展阅读路线`,
+        subtitle: result.data.subtitle || `${route.length} 章串起的一本策展读本`,
         preface: result.data.preface || "",
         tags: Array.isArray(result.data.tags) ? result.data.tags : [],
         style: result.data.style || "AI 知识策展",
