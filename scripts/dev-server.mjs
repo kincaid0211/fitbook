@@ -1,6 +1,7 @@
 import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const root = process.cwd();
 const port = Number(process.env.PORT || 5173);
@@ -14,6 +15,14 @@ const mimeTypes = {
   ".svg": "image/svg+xml",
 };
 
+async function handleApi(req, res) {
+  const apiPath = new URL(req.url || "/", `http://${host}:${port}`).pathname;
+  const fileName = `${apiPath.replace(/^\/api\//, "")}.js`;
+  const filePath = path.join(root, "api", fileName);
+  const mod = await import(`${pathToFileURL(filePath).href}?t=${Date.now()}`);
+  await mod.default(req, res);
+}
+
 function safePath(urlPath) {
   const decoded = decodeURIComponent(urlPath.split("?")[0]);
   const normalized = path.normalize(decoded === "/" ? "/index.html" : decoded);
@@ -24,6 +33,11 @@ function safePath(urlPath) {
 
 const server = http.createServer(async (req, res) => {
   try {
+    if ((req.url || "").startsWith("/api/")) {
+      await handleApi(req, res);
+      return;
+    }
+
     const filePath = safePath(req.url || "/");
     const ext = path.extname(filePath);
     const data = await fs.readFile(filePath);

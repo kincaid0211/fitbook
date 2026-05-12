@@ -55,12 +55,14 @@ Popularity-related signals:
 - Team idea post likes in the `黑客松脑洞补给站` circle count toward `最佳人气奖`.
 - Project likes, product login count, and team idea post likes count toward `社区人气奖`.
 
-## Zhihu OpenAPI Basics
+## Zhihu API Basics
+
+Content data APIs such as `zhihu_search`, `global_search`, and `hot_list` use the newer Zhihu developer platform Bearer authentication.
 
 Base URL:
 
 ```text
-https://openapi.zhihu.com/
+https://developer.zhihu.com/
 ```
 
 Protocol and data format:
@@ -68,12 +70,50 @@ Protocol and data format:
 - HTTPS
 - JSON
 
+Required request headers:
+
+| Header | Required | Meaning |
+| --- | --- | --- |
+| `Authorization` | Yes | `Bearer <your_access_secret>` |
+| `X-Request-Timestamp` | Yes | Current Unix timestamp in seconds |
+| `Content-Type` | Yes | `application/json` |
+
+The local Access Secret appears in `note/zhihuhackathon/知乎API Key.md`. Treat it as sensitive: do not hardcode it into frontend code, public repos, committed docs, or generated static files. Prefer server-side proxy calls that load the secret from environment variables or ignored local config.
+
+Auth failure can return business code `20001` with message `Authorization failed`.
+
+Standard response shape for these content APIs:
+
+```json
+{
+  "Code": 0,
+  "Message": "success",
+  "Data": {}
+}
+```
+
+Common content API status/error codes:
+
+- `0`: success
+- `10001`: parameter error
+- `20001`: authentication failure
+- `30001`: frequency limit
+- `90001`: internal error
+
+Legacy circle OpenAPI endpoints still use the older signed authentication pattern described in the original hackathon docs.
+
+Legacy circle OpenAPI base URL:
+
+```text
+https://openapi.zhihu.com/
+```
+
 Canonical API documentation:
 
 - `https://www.zhihu.com/ring/moltbook/api`
 - Key/application page: `https://www.zhihu.com/ring/moltbook`
 
-All requests require signed authentication headers.
+Circle OpenAPI requests require signed authentication headers.
 
 ### Credentials
 
@@ -109,9 +149,9 @@ Required request headers:
 | `X-Sign` | Yes | Base64 HMAC-SHA256 signature |
 | `X-Extra-Info` | Yes | Extra info, can be empty |
 
-Auth failure returns HTTP 401 with error code `101` and message similar to `Key verification failed`.
+Circle auth failure returns HTTP 401 with error code `101` and message similar to `Key verification failed`.
 
-### Standard Response Shape
+### Legacy Circle Response Shape
 
 ```json
 {
@@ -163,7 +203,12 @@ Relevant endpoints:
 
 Endpoint:
 
-- `GET /api/v1/content/hot_list`
+- `GET https://developer.zhihu.com/api/v1/content/hot_list`
+
+Authentication:
+
+- `Authorization: Bearer <access_secret>`
+- `X-Request-Timestamp: 秒级 Unix 时间戳`
 
 Use cases:
 
@@ -207,7 +252,17 @@ Use cases:
 
 Endpoint:
 
-- `GET /api/v1/content/zhihu_search`
+- `GET https://developer.zhihu.com/api/v1/content/zhihu_search`
+
+Authentication:
+
+- `Authorization: Bearer <access_secret>`
+- `X-Request-Timestamp: 秒级 Unix 时间戳`
+
+Query parameters:
+
+- `Query`: required search keyword.
+- `Count`: optional result count, default 10, maximum 10.
 
 Returns Zhihu site content such as articles and Q&A with title, summary, author, publish time, relevance score, authority level, likes, comments, and selected comments.
 
@@ -221,7 +276,17 @@ Use cases:
 
 Endpoint:
 
-- `GET /api/v1/content/global_search`
+- `GET https://developer.zhihu.com/api/v1/content/global_search`
+
+Authentication:
+
+- `Authorization: Bearer <access_secret>`
+- `X-Request-Timestamp: 秒级 Unix 时间戳`
+
+Query parameters:
+
+- `Query`: required search keyword.
+- `Count`: optional result count, default 10, maximum 20.
 
 Returns web results with title, summary, author, publish time, relevance score, and authority level.
 

@@ -1,5 +1,3 @@
-import crypto from "node:crypto";
-
 const sampleUrls = [
   "https://zhuanlan.zhihu.com/p/123456789",
   "https://www.zhihu.com/question/123456789/answer/987654321",
@@ -55,36 +53,30 @@ function parseZhihuUrl(input) {
   return { ok: false, reason: "unsupported_zhihu_url", host, path };
 }
 
-function buildZhihuHeaders({ appKey, appSecret, timestamp, logId, extraInfo = "" }) {
-  const signText = `app_key:${appKey}|ts:${timestamp}|logid:${logId}|extra_info:${extraInfo}`;
-  const sign = crypto.createHmac("sha256", appSecret).update(signText).digest("base64");
+function buildZhihuDataHeaders({ accessSecret, timestamp }) {
   return {
-    "X-App-Key": appKey,
-    "X-Timestamp": timestamp,
-    "X-Log-Id": logId,
-    "X-Sign": sign,
-    "X-Extra-Info": extraInfo,
+    Authorization: `Bearer ${accessSecret}`,
+    "X-Request-Timestamp": timestamp,
+    "Content-Type": "application/json",
   };
 }
 
 const parsed = sampleUrls.map(parseZhihuUrl);
-const headers = buildZhihuHeaders({
-  appKey: "sample_user_token",
-  appSecret: "sample_secret",
+const headers = buildZhihuDataHeaders({
+  accessSecret: "sample_access_secret",
   timestamp: "1778438400",
-  logId: "request_sample",
 });
 
 console.log(
   JSON.stringify(
     {
       urlParsing: parsed,
-      signatureHeaderKeys: Object.keys(headers),
-      signatureLooksBase64: /^[A-Za-z0-9+/]+={0,2}$/.test(headers["X-Sign"]),
+      bearerHeaderKeys: Object.keys(headers),
+      timestampLooksSeconds: /^\d{10}$/.test(headers["X-Request-Timestamp"]),
+      authUsesBearer: headers.Authorization.startsWith("Bearer "),
       note: "This local smoke test does not use real credentials or call the network.",
     },
     null,
     2,
   ),
 );
-

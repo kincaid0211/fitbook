@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
     "build:standalone": "node scripts/build-standalone.mjs",
-    "check": "node scripts/verify-zhihu-basics.mjs"
+    "check": "node scripts/verify-zhihu-basics.mjs",
+    "probe:zhihu-search": "ZHIHU_CONTENT_API=zhihu_search node scripts/probe-zhihu-content.mjs",
+    "probe:global-search": "ZHIHU_CONTENT_API=global_search node scripts/probe-zhihu-content.mjs"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "jsdom": "^29.1.1"
   }
 }
