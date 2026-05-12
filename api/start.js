@@ -6,6 +6,7 @@ import {
   getNodeConfig,
   nodePrompt,
   buildStartUserPayload,
+  buildInitialDirections,
 } from "../lib/prompts.js";
 
 export default async function handler(req, res) {
@@ -23,6 +24,15 @@ export default async function handler(req, res) {
     });
 
     const data = result.data;
+    const understanding = {
+      summary: data.summary || parsed.contentExcerpt.slice(0, 180),
+      concepts: Array.isArray(data.concepts) ? data.concepts.slice(0, 6) : [],
+      peopleWorksCases: Array.isArray(data.peopleWorksCases) ? data.peopleWorksCases : [],
+      controversies: Array.isArray(data.controversies) ? data.controversies : [],
+      extensionDirections: Array.isArray(data.extensionDirections) ? data.extensionDirections : [],
+      searchKeywords: Array.isArray(data.searchKeywords) ? data.searchKeywords : [],
+    };
+
     sendJson(res, 200, {
       ok: true,
       source: parsed.source,
@@ -34,16 +44,10 @@ export default async function handler(req, res) {
       basedOnUserText: parsed.basedOnUserText,
       needsUserText: parsed.needsUserText,
       parseWarning: parsed.parseWarning || "",
-      understanding: {
-        summary: data.summary || parsed.contentExcerpt.slice(0, 180),
-        concepts: Array.isArray(data.concepts) ? data.concepts.slice(0, 6) : [],
-        peopleWorksCases: Array.isArray(data.peopleWorksCases) ? data.peopleWorksCases : [],
-        controversies: Array.isArray(data.controversies) ? data.controversies : [],
-        extensionDirections: Array.isArray(data.extensionDirections) ? data.extensionDirections : [],
-        searchKeywords: Array.isArray(data.searchKeywords) ? data.searchKeywords : [],
-      },
+      understanding,
       interestProfile: data.interestProfile || {},
       curatorMessage: data.curatorMessage || "我已经读到了一个可以展开的兴趣起点。",
+      directions: buildInitialDirections(understanding),
       model: result.model,
       provider: result.provider,
     });

@@ -88,10 +88,10 @@ export default async function handler(req, res) {
 
   try {
     body = await readJson(req);
-    const configuredNode = getNodeConfig(body, "choose") || { key: "choose" };
+    const configuredNode = getNodeConfig(body, "choose") || { key: "choose", timeoutSeconds: 25 };
     const nodeConfig = {
       ...configuredNode,
-      timeoutSeconds: Math.min(45, Number(configuredNode.timeoutSeconds || 45)),
+      timeoutSeconds: Math.min(45, Number(configuredNode.timeoutSeconds || 25)),
     };
     const route = Array.isArray(body.route) ? body.route : [];
     const isLastStep = route.length >= 9;

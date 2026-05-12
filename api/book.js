@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         tags: Array.isArray(result.data.tags) ? result.data.tags : [],
         style: result.data.style || "AI 知识策展",
         explorationSummary: result.data.explorationSummary || "",
-        steps: Array.isArray(result.data.chapters) && result.data.chapters.length ? result.data.chapters : route,
+        steps: route,
         sourceAuthors: Array.isArray(result.data.sourceAuthors) ? result.data.sourceAuthors : [],
         createdAt: new Date().toLocaleString("zh-CN"),
       },

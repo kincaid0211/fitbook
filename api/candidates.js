@@ -1,6 +1,4 @@
 import { methodGuard, readJson, sendJson, handleApiError } from "../lib/http.js";
-import { callModelJson } from "../lib/model.js";
-import { curatorSystem, getNodeConfig, nodePrompt } from "../lib/prompts.js";
 import { searchZhihuContent } from "../lib/zhihu.js";
 
 function formatCount(value) {
@@ -68,92 +66,38 @@ function topItems(items, count) {
   }));
 }
 
-function fallbackPresentation(candidate, direction, currentStep, index) {
-  const connection = [
-    "它能接住当前章节留下的问题，把阅读推进到更具体的经验里。",
-    "它会把这一章的核心概念换到另一个场景中，让线索继续展开。",
-    "它适合作为补充视角，帮助这本非书保留一点新的发现。",
-  ][index] || "它能为下一章提供一个清晰入口。";
+function enrichedPresentation(candidate, direction, currentStep, index) {
+  const directionType = direction.directionType || direction.label || "下一章";
+  const concept = (candidate.concepts || [])[0] || direction.label || "当前主题";
+  const currentTitle = currentStep?.title || "当前章";
+
+  const connections = {
+    深入: `它从「${currentTitle}」的核心问题继续往下拆，把阅读带到更具体的证据和判断里。`,
+    跨界: `它把「${concept}」放到相邻领域里重新看，让这本非书保持开放。`,
+    人物作品案例: `它围绕「${concept}」展开一个具体案例，给抽象问题找到落脚点。`,
+    观点挑战: `它不顺着最舒服的方向走，而是把「${currentTitle}」放到反方视角里检验。`,
+    回到生活: `它把「${concept}」拉回日常经验，让前面的抽象理解变得可用。`,
+    意外发现: `它略微跳出当前线索，给非书保留一个旁支视角和新的发现空间。`,
+  };
+
+  const gains = [
+    `读完这一章，你会更清楚「${concept}」如何延展当前主题，也能判断这条线索是否值得继续深入。`,
+    `读完这一章，你会获得一个补充视角，帮助理解「${currentTitle}」在什么条件下成立、在什么条件下需要修正。`,
+    `读完这一章，你可能会获得一个旁支视角，重新理解前面章节里看似确定的问题。`,
+  ];
+
+  const connection = connections[directionType] || connections["深入"];
+  const readerGain = gains[index] || gains[0];
 
   return {
     ...candidate,
     curatedTitle: candidate.title,
     connection,
-    readerGain:
-      candidate.summary?.slice(0, 96) ||
-      `读完这一章，你会更清楚“${direction.label || direction.text}”如何延展当前主题。`,
-    fitTags: [direction.directionType || direction.label || "下一章", ...(candidate.concepts || [])].filter(Boolean).slice(0, 3),
+    readerGain,
+    fitTags: [directionType, ...(candidate.concepts || [])].filter(Boolean).slice(0, 3),
     originalTitle: candidate.title,
-    previousTitle: currentStep?.title || "",
+    previousTitle: currentTitle,
   };
-}
-
-async function enrichCandidates({ candidates, currentStep, direction, route, body }) {
-  const fallback = candidates.map((candidate, index) => fallbackPresentation(candidate, direction, currentStep, index));
-  const nodeConfig = getNodeConfig(body, "candidates");
-
-  try {
-    const result = await callModelJson({
-      system: nodePrompt(curatorSystem, nodeConfig),
-      nodeConfig,
-      temperature: 0.35,
-      user: JSON.stringify({
-        node: "curate_next_chapter_candidates",
-        task:
-          "把搜索返回的候选内容整理成“选择下一章”模态框可用的三选一推荐。不要写“AI 提炼”“推荐理由”“搜索结果”。",
-        requirements: [
-          "只为给定 candidates 生成展示文案，不改变候选的 url、sourceType、author。",
-          "curatedTitle 是适合作为非书下一章的标题，8–22 字，能衔接当前章，不要照搬生硬搜索标题。",
-          "connection 说明它如何接住当前章，28–58 字。",
-          "readerGain 从用户收获角度说明读完会得到什么，35–80 字。",
-          "fitTags 2–3 个，每个 2–6 字。",
-          "三个候选要有差异，帮助用户做三选一判断。",
-        ],
-        requiredShape: {
-          candidates: [
-            {
-              index: "number",
-              curatedTitle: "string",
-              connection: "string",
-              readerGain: "string",
-              fitTags: ["string"],
-            },
-          ],
-        },
-        currentStep,
-        selectedDirection: direction,
-        route: route.map((step, index) => ({
-          index: index + 1,
-          title: step.title,
-          summary: step.summary,
-          bridge: step.bridge || "",
-        })),
-        candidates: fallback.map((candidate, index) => ({
-          index,
-          title: candidate.title,
-          sourceLabel: candidate.sourceLabel,
-          author: candidate.author,
-          summary: candidate.summary,
-          trustSignals: candidate.trustSignals,
-        })),
-      }),
-    });
-
-    const aiCandidates = Array.isArray(result.data.candidates) ? result.data.candidates : [];
-    return fallback.map((candidate, index) => {
-      const enriched = aiCandidates.find((item) => Number(item.index) === index) || {};
-      return {
-        ...candidate,
-        curatedTitle: enriched.curatedTitle || candidate.curatedTitle,
-        connection: enriched.connection || candidate.connection,
-        readerGain: enriched.readerGain || candidate.readerGain,
-        fitTags: Array.isArray(enriched.fitTags) && enriched.fitTags.length ? enriched.fitTags : candidate.fitTags,
-      };
-    });
-  } catch (error) {
-    console.error("Candidate AI enrichment failed:", error);
-    return fallback;
-  }
 }
 
 export default async function handler(req, res) {
@@ -167,10 +111,20 @@ export default async function handler(req, res) {
     const zhihuQuery = direction.zhihuQuery || direction.text || direction.label;
     const globalQuery = direction.globalQuery || direction.text || direction.label;
 
-    const [zhihu, global] = await Promise.all([
+    const [zhihuResult, globalResult] = await Promise.allSettled([
       searchZhihuContent({ apiName: "zhihu_search", query: zhihuQuery, count: 5 }),
       searchZhihuContent({ apiName: "global_search", query: globalQuery, count: 4 }),
     ]);
+
+    if (zhihuResult.status === "rejected") {
+      console.error("Zhihu search failed:", zhihuResult.reason);
+    }
+    if (globalResult.status === "rejected") {
+      console.error("Global search failed:", globalResult.reason);
+    }
+
+    const zhihu = zhihuResult.status === "fulfilled" ? zhihuResult.value : { items: [] };
+    const global = globalResult.status === "fulfilled" ? globalResult.value : { items: [] };
 
     const zhihuItems = topItems(zhihu.items, 3);
     const globalItems = topItems(global.items, 2);
@@ -183,7 +137,7 @@ export default async function handler(req, res) {
           index === 0
             ? "这条候选来自知乎站内内容，优先作为最终章节入口。"
             : "这条候选可以提供同一方向下的另一个知乎视角。",
-        bridgePreview: `它可以承接当前章的“${currentStep.title || "起点"}”，继续推进到“${direction.text || direction.label}”。`,
+        bridgePreview: `它可以承接当前章的"${currentStep.title || "起点"}"，继续推进到"${direction.text || direction.label}"。`,
       })),
       ...globalItems.slice(0, 1).map((item) => ({
         ...item,
@@ -201,13 +155,9 @@ export default async function handler(req, res) {
       throw error;
     }
 
-    const candidates = await enrichCandidates({
-      candidates: rawCandidates.slice(0, 3),
-      currentStep,
-      direction,
-      route,
-      body,
-    });
+    const candidates = rawCandidates.slice(0, 3).map((candidate, index) =>
+      enrichedPresentation(candidate, direction, currentStep, index)
+    );
 
     sendJson(res, 200, {
       ok: true,

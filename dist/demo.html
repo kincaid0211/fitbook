@@ -2324,6 +2324,7 @@ async function startAdventure(event) {
       text: state.articleText,
     });
     const step = firstStepFromStart(data);
+    step.directions = data.directions || [];
     Object.assign(state, {
       view: "adventure",
       currentIndex: 0,
@@ -2335,12 +2336,11 @@ async function startAdventure(event) {
       finished: false,
       activeBook: null,
       useDemo: false,
-      loading: "AI 正在生成下一章方向...",
-      loadingStartedAt: Date.now(),
+      loading: "",
+      loadingStartedAt: null,
       error: "",
     });
     render();
-    await refreshDirections(step);
   } catch (error) {
     setError(error);
   }
@@ -2514,44 +2514,54 @@ async function finishBook() {
     setBusy("正在装订你的非书...");
     const localBook = makeBook();
 
-    const [bookResult, coverResult] = await Promise.allSettled([
+    // 立即展示 localBook，不等待 AI
+    const existing = readLibrary();
+    writeLibrary([localBook, ...existing.filter((item) => item.id !== localBook.id)].slice(0, 12));
+    update({ view: "book", activeBook: localBook, finished: "book", loading: "", loadingStartedAt: null, error: "" });
+
+    // 后台并行请求 book-meta 和 cover，成功后静默更新
+    Promise.allSettled([
       apiPost("/api/book", {
         route: state.route,
         interestProfile: state.interestProfile,
       }),
       apiPost("/api/cover", { book: localBook }),
-    ]);
+    ]).then(([bookResult, coverResult]) => {
+      let book = { ...localBook };
+      if (bookResult.status === "fulfilled") {
+        const b = bookResult.value.book || {};
+        book = {
+          ...book,
+          title: b.title || book.title,
+          subtitle: b.subtitle || book.subtitle,
+          preface: b.preface || book.preface,
+          tags: Array.isArray(b.tags) ? b.tags : book.tags,
+          style: b.style || book.style,
+          explorationSummary: b.explorationSummary || book.explorationSummary,
+          sourceAuthors: Array.isArray(b.sourceAuthors) ? b.sourceAuthors : book.sourceAuthors,
+          steps: state.route,
+        };
+      } else {
+        console.error("Book API failed:", bookResult.reason);
+      }
 
-    let book = bookResult.status === "fulfilled" ? bookResult.value.book : localBook;
-    if (bookResult.status === "rejected") {
-      console.error("Book API failed:", bookResult.reason);
-    }
+      if (coverResult.status === "fulfilled" && coverResult.value.coverConcept) {
+        const cd = coverResult.value.coverConcept;
+        book.coverConcept = cd.composition || cd.imagePrompt || "";
+        book.coverData = cd;
+        book.cover = cd.cssTheme || "music";
+      } else if (coverResult.status === "rejected") {
+        console.error("Cover API failed:", coverResult.reason);
+      }
 
-    let coverData;
-    if (coverResult.status === "fulfilled") {
-      coverData = coverResult.value.coverConcept;
-    } else {
-      console.error("Cover API failed:", coverResult.reason);
-    }
+      const lib = readLibrary();
+      writeLibrary([book, ...lib.filter((item) => item.id !== book.id)].slice(0, 12));
 
-    if (coverData) {
-      book = {
-        ...book,
-        coverConcept: coverData.composition || coverData.imagePrompt || "",
-        coverData: coverData,
-        cover: coverData.cssTheme || "music",
-      };
-    } else {
-      book = {
-        ...book,
-        coverConcept: "封面方案暂时生成失败，但这本非书的章节导读已经完成。",
-        cover: "music",
-      };
-    }
-
-    const existing = readLibrary();
-    writeLibrary([book, ...existing.filter((item) => item.id !== book.id)].slice(0, 12));
-    update({ view: "book", activeBook: book, finished: "book", loading: "", loadingStartedAt: null, error: "" });
+      // 静默更新当前展示
+      if (state.activeBook?.id === localBook.id) {
+        update({ activeBook: book });
+      }
+    });
   } catch (error) {
     setError(error);
   }
