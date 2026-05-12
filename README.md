@@ -44,10 +44,12 @@ Required environment variables:
 MOONSHOT_API_KEY=...
 KIMI_BASE_URL=https://api.moonshot.cn/v1
 KIMI_MODEL=kimi-k2.6
+KIMI_FAST_MODEL=kimi-k2.5
 ZHIHU_ACCESS_SECRET=...
 SILICONFLOW_API_KEY=...
 SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
 SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
+SILICONFLOW_FAST_MODEL=Pro/moonshotai/Kimi-K2.5
 ```
 
 ## Notes
@@ -64,3 +66,4 @@ SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
 - Sensitive local notes and API materials under `note/` are intentionally excluded from Git.
 - See [PROJECT_GUIDE.md](PROJECT_GUIDE.md) for the file structure, deployment flow, update log, and documentation maintenance rules.
 - See [CLAUDE.md](CLAUDE.md) for the Claude Code working context, technical stack cheat sheet, current progress snapshot, and collaboration conventions.
+- AI service efficiency optimizations (2026-05-12): merged `choose` + `directions` into a single call cutting per-step API calls by 50%; added prompt context compression for long routes via `compactRouteForContext()` keeping only recent 3 steps in full; introduced fast/deep model tiering with automatic lightweight model selection for quick nodes via `KIMI_FAST_MODEL` / `SILICONFLOW_FAST_MODEL`; added 8-minute in-memory AI result caching by request hash; parallelized `book` + `cover` generation in `finishBook()`.

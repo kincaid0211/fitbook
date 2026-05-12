@@ -4,7 +4,7 @@ import {
   curatorSystem,
   getNodeConfig,
   nodePrompt,
-  buildChooseUserPayload,
+  buildChooseWithDirectionsUserPayload,
 } from "../lib/prompts.js";
 
 export default async function handler(req, res) {
@@ -13,14 +13,18 @@ export default async function handler(req, res) {
   try {
     const body = await readJson(req);
     const nodeConfig = getNodeConfig(body, "choose");
+    const route = Array.isArray(body.route) ? body.route : [];
+    const isLastStep = route.length >= 9;
+
     const result = await callModelJson({
       system: nodePrompt(curatorSystem, nodeConfig),
       nodeConfig,
-      user: buildChooseUserPayload({
+      user: buildChooseWithDirectionsUserPayload({
         previousStep: body.previousStep,
         candidate: body.candidate,
-        route: body.route,
+        route,
         interestProfile: body.interestProfile,
+        isLastStep,
       }),
     });
 
@@ -31,16 +35,25 @@ export default async function handler(req, res) {
       throw error;
     }
 
+    if (!isLastStep && (!Array.isArray(result.data.directions) || result.data.directions.length < 3)) {
+      const error = new Error("AI 没有生成足够的下一站方向。");
+      error.statusCode = 502;
+      error.publicMessage = "下一站方向生成失败，请重试。";
+      throw error;
+    }
+
     sendJson(res, 200, {
       ok: true,
       step: {
         ...result.data.step,
         bridge: result.data.bridge,
-        directions: [],
+        directions: isLastStep ? [] : (result.data.directions || []),
       },
       bridge: result.data.bridge,
+      directions: isLastStep ? [] : (result.data.directions || []),
       interestProfile: result.data.interestProfile || body.interestProfile || {},
       curatorMessage: result.data.curatorMessage || "这一站已经装进你的路线。",
+      nextCuratorMessage: isLastStep ? "" : (result.data.nextCuratorMessage || "你可以选择一个方向继续。"),
       model: result.model,
       provider: result.provider,
     });

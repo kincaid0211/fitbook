@@ -309,17 +309,20 @@ function writeLibrary(books) {
 
 function makeBook() {
   const chapterCount = state.route.length;
+  const allConcepts = state.route.flatMap((s) => s.concepts || []);
+  const uniqueConcepts = [...new Set(allConcepts)].slice(0, 6);
+
   return {
     id: `book_${Date.now()}`,
     title: chapterCount < adventure.steps.length ? "我读出的一本短非书" : adventure.title,
     subtitle: chapterCount < adventure.steps.length ? `从一个兴趣起点出发，完成 ${chapterCount} 站策展阅读。` : adventure.subtitle,
     style: adventure.style,
-    tags: adventure.tags,
+    tags: uniqueConcepts.length > 0 ? uniqueConcepts : adventure.tags,
     steps: state.route,
     createdAt: new Date().toLocaleString("zh-CN"),
     preface:
       "这本非书从用户给出的一篇文章或一段文本出发，由 AI 知识策展人持续提炼兴趣、连接知乎与全网内容，并把每一次选择沉淀成章节导读、知识桥和原文入口。",
-    coverConcept: "主视觉围绕“从一页文章长出一条阅读路径”，使用清亮蓝色、暖黄色节点和纸页纹理，表达主动探索与温和陪伴。",
+    coverConcept: "主视觉围绕「从一页文章长出一条阅读路径」，使用清亮蓝色、暖黄色节点和纸页纹理，表达主动探索与温和陪伴。",
   };
 }
 
@@ -470,7 +473,7 @@ async function goNext() {
   if (!state.selectedCandidate) return;
 
   try {
-    setBusy("正在生成章节导读和知识桥...");
+    setBusy("正在生成章节导读、知识桥和下一站方向...");
     const data = await apiPost("/api/choose", {
       previousStep: state.route[state.currentIndex],
       candidate: state.selectedCandidate,
@@ -479,6 +482,11 @@ async function goNext() {
     });
     const nextRoute = [...state.route, data.step];
     const nextIndex = nextRoute.length - 1;
+
+    if (data.directions?.length) {
+      nextRoute[nextIndex].directions = data.directions;
+    }
+
     Object.assign(state, {
       currentIndex: nextIndex,
       route: nextRoute,
@@ -492,7 +500,8 @@ async function goNext() {
       error: "",
     });
     render();
-    if (!state.finished) {
+
+    if (!state.finished && !data.directions?.length) {
       setBusy("AI 正在生成下一站方向...");
       await refreshDirections(data.step);
     }
@@ -541,26 +550,43 @@ async function finishBook() {
 
   try {
     setBusy("正在装订你的非书...");
-    const bookData = await apiPost("/api/book", {
-      route: state.route,
-      interestProfile: state.interestProfile,
-    });
-    let book = bookData.book;
-    try {
-      const coverData = await apiPost("/api/cover", { book });
+    const localBook = makeBook();
+
+    const [bookResult, coverResult] = await Promise.allSettled([
+      apiPost("/api/book", {
+        route: state.route,
+        interestProfile: state.interestProfile,
+      }),
+      apiPost("/api/cover", { book: localBook }),
+    ]);
+
+    let book = bookResult.status === "fulfilled" ? bookResult.value.book : localBook;
+    if (bookResult.status === "rejected") {
+      console.error("Book API failed:", bookResult.reason);
+    }
+
+    let coverData;
+    if (coverResult.status === "fulfilled") {
+      coverData = coverResult.value.coverConcept;
+    } else {
+      console.error("Cover API failed:", coverResult.reason);
+    }
+
+    if (coverData) {
       book = {
         ...book,
-        coverConcept: coverData.coverConcept?.composition || coverData.coverConcept?.imagePrompt || "",
-        coverData: coverData.coverConcept,
-        cover: coverData.coverConcept?.cssTheme || "music",
+        coverConcept: coverData.composition || coverData.imagePrompt || "",
+        coverData: coverData,
+        cover: coverData.cssTheme || "music",
       };
-    } catch {
+    } else {
       book = {
         ...book,
         coverConcept: "封面方案暂时生成失败，但这本非书的章节导读已经完成。",
         cover: "music",
       };
     }
+
     const existing = readLibrary();
     writeLibrary([book, ...existing.filter((item) => item.id !== book.id)].slice(0, 12));
     update({ view: "book", activeBook: book, finished: "book", loading: "", loadingStartedAt: null, error: "" });
@@ -725,7 +751,7 @@ function candidateOptions(nextStep) {
     {
       source: "全网背景",
       title: `${nextStep.concepts[0]}的背景补充`,
-      summary: `补充理解“${nextStep.concepts[0]}”相关概念，帮助你在进入下一篇知乎内容前建立上下文。`,
+      summary: `补充理解"${nextStep.concepts[0]}"相关概念，帮助你在进入下一篇知乎内容前建立上下文。`,
       reason: "全网搜索只作为背景材料，不替代最终章节原文。",
     },
     {
@@ -781,7 +807,7 @@ function renderAdventure() {
           </div>
           <div class="curator-note">
             <strong>策展人反馈</strong>
-            <p>你正在把这个问题从“读到一篇内容”推进成“发现一组关系”。下一步可以顺着兴趣走，也可以故意拐向一个陌生角度。</p>
+            <p>你正在把这个问题从"读到一篇内容"推进成"发现一组关系"。下一步可以顺着兴趣走，也可以故意拐向一个陌生角度。</p>
           </div>
           <div class="interest-panel">
             <strong>正在浮现的兴趣</strong>

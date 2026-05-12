@@ -38,7 +38,7 @@
 ├── api/                              # Vercel Serverless API
 │   ├── book.js                       # 生成非书读本
 │   ├── candidates.js                 # 搜索并生成候选内容
-│   ├── choose.js                     # 生成章节导读和知识桥
+│   ├── choose.js                     # 生成章节导读和知识桥（已合并下一站方向）
 │   ├── cover.js                      # 生成 AI 封面方案
 │   ├── directions.js                 # 生成下一站方向
 │   ├── models.js                     # 拉取硅基流动可用模型列表
@@ -59,9 +59,9 @@
 │   ├── cache.js                      # Serverless 内存缓存
 │   ├── env.js                        # 本地/线上环境变量读取
 │   ├── http.js                       # API 请求/响应工具
-│   ├── model.js                      # Kimi/硅基流动 OpenAI 兼容模型调用
+│   ├── model.js                      # Kimi/硅基流动 OpenAI 兼容模型调用（含缓存与分层）
 │   ├── parser.js                     # 网页正文解析
-│   ├── prompts.js                    # AI 策展人 system + 5 个节点 user payload 构造器
+│   ├── prompts.js                    # AI 策展人 system + 6 个节点 user payload 构造器
 │   └── zhihu.js                      # 知乎内容 API 代理
 ├── scripts/
 │   ├── build-standalone.mjs          # 生成 dist/demo.html
@@ -168,10 +168,12 @@ npm run probe:global-search
 MOONSHOT_API_KEY=...
 KIMI_BASE_URL=https://api.moonshot.cn/v1
 KIMI_MODEL=kimi-k2.6
+KIMI_FAST_MODEL=kimi-k2.5
 ZHIHU_ACCESS_SECRET=...
 SILICONFLOW_API_KEY=...
 SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
 SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
+SILICONFLOW_FAST_MODEL=Pro/moonshotai/Kimi-K2.5
 ```
 
 4. 正式访问入口使用：
@@ -188,6 +190,7 @@ SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
 - 硅基流动可作为测试或备用模型服务；真实 `SILICONFLOW_API_KEY` 只允许存在于本地 `.env.local` 或 Vercel 环境变量中。
 - `dist/demo.html` 保留为备用单文件演示，不作为正式 Vercel 入口。
 - 如果 Kimi 或搜索接口调用失败，真实流程应展示失败提示，不静默伪装为真实结果。
+- 新增 `KIMI_FAST_MODEL` / `SILICONFLOW_FAST_MODEL` 用于快速节点（start/directions/cover）的轻量模型分层；如不配置则沿用默认模型。
 
 ### 方式二：静态托管单文件
 
@@ -281,6 +284,13 @@ git push fitbook master
 - 将旧搜索探针改为 `scripts/probe-zhihu-content.mjs` 通用内容数据接口探针，从旧 `openapi.zhihu.com` HMAC 签名探测改为新版 `developer.zhihu.com` Bearer 鉴权探测；将 `npm run check` 的本地冒烟检查同步为 Bearer 头字段检查，并新增 `npm run probe:zhihu-search`、`npm run probe:global-search` 便于复测真实接口。
 - 使用 Bearer 鉴权成功复测知乎搜索：`GET https://developer.zhihu.com/api/v1/content/zhihu_search?Query=心理学&Count=5` 返回 HTTP 200、业务 `Code=0`、`Message=success`、`Items` 数量 5；同步更新 `AGENTS.md`，将内容数据 API 规则改为新版 Bearer 方案，并保留圈子 OpenAPI 的旧签名说明。
 - 使用 Bearer 鉴权成功复测全网搜索：`GET https://developer.zhihu.com/api/v1/content/global_search?Query=ChatGPT&Count=5` 返回 HTTP 200、业务 `Code=0`、`Message=success`、`Items` 数量 5；实际返回字段包含 `Data.HasMore`、`Data.SearchHashId`、`Data.Items`，条目字段与知乎搜索基本兼容。
+- AI 服务效率优化（5 项核心优化）：
+  - 合并 choose + directions：在 `api/choose.js` 中改用 `buildChooseWithDirectionsUserPayload`，一次模型调用同时生成章节导读/知识桥和下一站 3 个方向，每站减少 1 次串行 AI 调用，全程从 23 次降至 13 次。
+  - 精简 Prompt 上下文：`lib/prompts.js` 新增 `compactRouteForContext()`，超过 3 站的老历史只保留 title + bridge，降低长路线时的 token 消耗和模型处理时间。
+  - 快慢模型分层：`lib/model.js` 新增 `resolveNodeModel()`，快速节点（start/directions/cover）自动使用 `KIMI_FAST_MODEL` / `SILICONFLOW_FAST_MODEL`，深度节点（choose/book）保持默认模型。
+  - AI 结果缓存：`lib/model.js` 对 system+user payload 做 MD5 hash，相同输入缓存 8 分钟，降低重复调用。
+  - 并行 book + cover：`src/app.js` `finishBook()` 使用 `Promise.allSettled` 同时请求，减少装订等待时间。
+- 修复 `src/app.js` 字符串内部中文双引号嵌套导致的浏览器白屏（`makeBook()` 的 `coverConcept` 字段）。
 
 ### 2026-05-11
 
