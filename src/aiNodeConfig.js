@@ -3,6 +3,7 @@ export const aiConfigStorageKey = "feishu-ai-node-config";
 export const aiNodeDefaults = {
   start: {
     label: "起点理解",
+    description: "解析并理解用户提供的起点文章或文本，提炼摘要、关键概念、争议点、可延展方向和初始兴趣画像。",
     provider: "siliconflow",
     model: "Pro/moonshotai/Kimi-K2.6",
     temperature: 0.25,
@@ -12,6 +13,7 @@ export const aiNodeDefaults = {
   },
   directions: {
     label: "下一站方向",
+    description: "基于当前站内容、路线历史和兴趣画像，生成 3 个互相区分的下一站探索方向，至少包含一个意外发现选项。",
     provider: "siliconflow",
     model: "Pro/moonshotai/Kimi-K2.6",
     temperature: 0.35,
@@ -21,6 +23,7 @@ export const aiNodeDefaults = {
   },
   choose: {
     label: "章节导读与知识桥",
+    description: "用户选择候选内容后，生成章节导读、知识桥、策展人反馈，并更新兴趣画像。",
     provider: "siliconflow",
     model: "Pro/moonshotai/Kimi-K2.6",
     temperature: 0.35,
@@ -30,6 +33,7 @@ export const aiNodeDefaults = {
   },
   book: {
     label: "非书生成",
+    description: "把已完成的阅读路线包装成一本「非书」，生成书名、序言、目录、章节导读、路线标签和探索总结。",
     provider: "siliconflow",
     model: "Pro/moonshotai/Kimi-K2.6",
     temperature: 0.45,
@@ -39,6 +43,7 @@ export const aiNodeDefaults = {
   },
   cover: {
     label: "封面方案",
+    description: "为非书生成结构化封面概念，包括主视觉、色彩、构图和图像生成提示词，不生成真实图片。",
     provider: "siliconflow",
     model: "Pro/moonshotai/Kimi-K2.6",
     temperature: 0.55,
