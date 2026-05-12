@@ -68,6 +68,7 @@
 │   ├── build-standalone.mjs          # 生成 dist/demo.html
 │   ├── dev-server.mjs                # 启动本地静态开发服务
 │   ├── probe-zhihu-content.mjs       # 知乎内容数据接口探测脚本
+│   ├── test-entry-features.mjs       # 入口体验增强端到端测试（JSDOM）
 │   └── verify-zhihu-basics.mjs       # URL 解析和签名逻辑的本地冒烟检查
 └── src/
     ├── admin.css                     # AI 配置页样式
@@ -173,8 +174,8 @@ KIMI_FAST_MODEL=kimi-k2.5
 ZHIHU_ACCESS_SECRET=...
 SILICONFLOW_API_KEY=...
 SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
-SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
-SILICONFLOW_FAST_MODEL=Pro/moonshotai/Kimi-K2.5
+SILICONFLOW_MODEL=Pro/deepseek-ai/DeepSeek-V3.2
+SILICONFLOW_FAST_MODEL=deepseek-ai/DeepSeek-V4-Flash
 ```
 
 4. 正式访问入口使用：
@@ -192,6 +193,7 @@ SILICONFLOW_FAST_MODEL=Pro/moonshotai/Kimi-K2.5
 - `dist/demo.html` 保留为备用单文件演示，不作为正式 Vercel 入口。
 - 如果 Kimi 或搜索接口调用失败，真实流程应展示失败提示，不静默伪装为真实结果。
 - 新增 `KIMI_FAST_MODEL` / `SILICONFLOW_FAST_MODEL` 用于快速节点（start/directions/cover）的轻量模型分层；如不配置则沿用默认模型。
+- 新增 URL 参数预填充支持：`?url=` 和 `?text=` 可直接触发探索流程，便于书签、分享和外部跳转。
 
 ### 方式二：静态托管单文件
 
@@ -244,6 +246,9 @@ git push fitbook master
 
 ### 2026-05-13
 
+- 新增 URL 参数预填充：`?url=` 和 `?text=` 自动填入起点并触发探索，支持从书签、分享、外部链接一键进入。
+- 新增精选起点卡片：起点页底部展示 6 个高质量知乎问题卡片（音乐、认知、AI、心理学、社会、成长），用户零输入即可启动探索。
+- 新增 Bookmarklet：落地页新增可拖拽书签链接，用户拖到浏览器书签栏后，在任意网页点击即可一键开启非书探索。
 - AI 响应时间优化方案全量落地：超时下限从 15 秒放开到 5 秒，并按节点类型设置默认超时（start 20s / directions 15s / choose 25s / book 30s / cover 15s）。
 - `lib/model.js` 增加 `max_tokens` 按节点控制输出长度（start 900 / directions 700 / choose 1400 / book 1100 / cover 700）。
 - `/api/start` 直接返回首站 3 个方向（`buildInitialDirections` 基于 `extensionDirections` + `searchKeywords` 规则生成），前端不再串行调用 `/api/directions`，起点阶段减少 1 次 AI 调用。
@@ -254,6 +259,14 @@ git push fitbook master
 - `src/aiNodeConfig.js` 调低各节点默认超时；`api/choose.js` 修复硬编码 `|| 45` 超时 fallback。
 - 端到端测试验证：start 68s→26s，candidates 0.85s（零 AI），choose 25s 触发 fallback 保底，book 46s→29.8s。
 - 重新生成 `dist/demo.html`。
+- 硅基流动模型分层配置落地：基于节点任务复杂度重新分配默认模型，降低整体调用成本并提升响应速度。
+  - `start` 改为 `Pro/deepseek-ai/DeepSeek-V3.2`（结构化理解 + JSON 准确性高，成本约为 Kimi-K2.6 的 1/3）。
+  - `directions` 改为 `Pro/deepseek-ai/DeepSeek-V3.2`（方向生成需区分度和创意，V3.2 足够且更快）。
+  - `choose` 保留 `Pro/moonshotai/Kimi-K2.6`（核心体验节点，需同时生成章节导读、知识桥、兴趣画像和下一章方向，质量优先）。
+  - `book` 改为 `Pro/deepseek-ai/DeepSeek-V3.2`（非书元信息生成对延迟容忍高，V3.2 综合整理能力足够）。
+  - `cover` 改为 `deepseek-ai/DeepSeek-V4-Flash`（封面方案输出结构简单，用轻量模型极低成本且响应最快）。
+- 重新设计落地页使用方法引导：将原独立的"如何使用非书"和 Bookmarklet 区块整合为"3 种方式，开启你的非书"卡片组（粘贴链接/文本、精选起点、Bookmarklet），置于 hero 正下方最显眼位置；4 步流程改为水平时间线（圆形序号 + 连接线），桌面端一眼看清完整路径；移动端自动转为垂直布局。
+- 新增端到端测试脚本 `scripts/test-entry-features.mjs`，用 JSDOM 验证 URL 参数预填充、精选起点卡片渲染、Bookmarklet 协议和参数触发逻辑，12 项测试全部通过。
 
 ### 2026-05-12
 

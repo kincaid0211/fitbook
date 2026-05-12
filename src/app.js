@@ -111,6 +111,45 @@ const sampleBooks = [
   },
 ];
 
+const featuredStarts = [
+  {
+    title: "为什么古典音乐听起来比流行音乐更高级？",
+    url: "https://www.zhihu.com/question/20337986",
+    tag: "音乐",
+    excerpt: "从审美标准、历史语境到个人经验，重新审视「高级」这个概念本身。",
+  },
+  {
+    title: "如何突破自己的认知茧房？",
+    url: "https://www.zhihu.com/question/316418287",
+    tag: "认知",
+    excerpt: "信息闭环是如何形成的，又有哪些方法可以让你看到更大的世界。",
+  },
+  {
+    title: "人工智能会取代人类的工作吗？",
+    url: "https://www.zhihu.com/question/275171402",
+    tag: "AI",
+    excerpt: "技术替代与能力迁移，从历次技术革命看工作形态的演变。",
+  },
+  {
+    title: "为什么人会陷入抑郁？",
+    url: "https://www.zhihu.com/question/20127628",
+    tag: "心理学",
+    excerpt: "从神经科学、社会环境到个人叙事，理解情绪背后的多层机制。",
+  },
+  {
+    title: "什么是好的公共讨论？",
+    url: "https://www.zhihu.com/question/22529930",
+    tag: "社会",
+    excerpt: "事实、观点与情绪在公共议题中如何共存与博弈。",
+  },
+  {
+    title: "如何培养深度工作的能力？",
+    url: "https://www.zhihu.com/question/28420609",
+    tag: "成长",
+    excerpt: "注意力经济的对立面，重新夺回对时间和心智的控制权。",
+  },
+];
+
 function uniqueAuthors(steps) {
   return [...new Set(steps.map((step) => step.author))];
 }
@@ -571,12 +610,10 @@ async function finishBook() {
     setBusy("正在装订你的非书...");
     const localBook = makeBook();
 
-    // 立即展示 localBook，不等待 AI
     const existing = readLibrary();
     writeLibrary([localBook, ...existing.filter((item) => item.id !== localBook.id)].slice(0, 12));
     update({ view: "book", activeBook: localBook, finished: "book", loading: "", loadingStartedAt: null, error: "" });
 
-    // 后台并行请求 book-meta 和 cover，成功后静默更新
     Promise.allSettled([
       apiPost("/api/book", {
         route: state.route,
@@ -614,7 +651,6 @@ async function finishBook() {
       const lib = readLibrary();
       writeLibrary([book, ...lib.filter((item) => item.id !== book.id)].slice(0, 12));
 
-      // 静默更新当前展示
       if (state.activeBook?.id === localBook.id) {
         update({ activeBook: book });
       }
@@ -676,6 +712,113 @@ function renderLanding() {
         </aside>
       </div>
 
+      <section class="section-block how-to-start">
+        <style>
+          .how-to-start { background: #f8fafc; border-radius: 1rem; padding: 2.5rem 2rem; }
+          .start-methods-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 1.5rem; }
+          .start-method-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.875rem; padding: 1.5rem; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; }
+          .start-method-card:hover { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,0.08); transform: translateY(-2px); }
+          .method-icon { font-size: 1.75rem; margin-bottom: 0.75rem; line-height: 1; }
+          .start-method-card strong { display: block; font-size: 1.0625rem; color: #0f172a; margin-bottom: 0.375rem; }
+          .start-method-card p { font-size: 0.875rem; color: #64748b; line-height: 1.6; margin: 0 0 1rem; flex: 1; }
+          .start-method-card .method-action { margin-top: auto; }
+          .start-method-card button { width: 100%; }
+          .bookmarklet-mini { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+          .bookmarklet-mini .bookmarklet-link { display: inline-block; padding: 0.5rem 1rem; background: #2563eb; color: #fff; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; text-decoration: none; cursor: move; box-shadow: 0 2px 6px rgba(37,99,235,0.2); transition: transform 0.15s; }
+          .bookmarklet-mini .bookmarklet-link:hover { transform: translateY(-1px); }
+          .bookmarklet-mini .bookmarklet-hint { color: #94a3b8; font-size: 0.75rem; }
+          @media (max-width: 768px) { .start-methods-grid { grid-template-columns: 1fr; } }
+        </style>
+        <div class="section-heading">
+          <p class="eyebrow">随时开始</p>
+          <h2>3 种方式，开启你的非书</h2>
+        </div>
+        <div class="start-methods-grid">
+          <article class="start-method-card">
+            <div class="method-icon">📝</div>
+            <strong>粘贴链接或文本</strong>
+            <p>输入任意文章链接，或直接粘贴标题、摘要和正文片段。支持知乎文章、回答、问题和任意网页。</p>
+            <div class="method-action">
+              <button class="ghost-button" data-view="start">去起点页 →</button>
+            </div>
+          </article>
+          <article class="start-method-card">
+            <div class="method-icon">🎯</div>
+            <strong>点击精选起点</strong>
+            <p>从 6 个高质量知乎问题中一键启动。零输入、零等待，立即开始探索。</p>
+            <div class="method-action">
+              <button class="ghost-button" data-view="start">去起点页 →</button>
+            </div>
+          </article>
+          <article class="start-method-card">
+            <div class="method-icon">🔗</div>
+            <strong>Bookmarklet 书签</strong>
+            <p>拖拽链接到浏览器书签栏。浏览任意网页时，一键跳转并自动带入当前页面链接。</p>
+            <div class="method-action">
+              <div class="bookmarklet-mini">
+                <a class="bookmarklet-link" id="bookmarklet-link" href="#">🔗 生成非书</a>
+                <span class="bookmarklet-hint">← 拖拽到书签栏</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block landing-flow">
+        <style>
+          .flow-steps { display: flex; align-items: flex-start; gap: 0; margin-top: 1.5rem; }
+          .flow-step { flex: 1; text-align: center; position: relative; padding: 0 0.5rem; }
+          .step-number { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; position: relative; z-index: 1; }
+          .flow-step strong { display: block; font-size: 1rem; color: #0f172a; margin-bottom: 0.375rem; }
+          .flow-step p { font-size: 0.875rem; color: #64748b; line-height: 1.6; margin: 0; }
+          .step-line { position: absolute; top: 1.25rem; left: calc(50% + 1.5rem); right: calc(-50% + 1.5rem); height: 2px; background: #e2e8f0; z-index: 0; }
+          .flow-step:last-child .step-line { display: none; }
+          @media (max-width: 640px) {
+            .flow-steps { flex-direction: column; gap: 1.5rem; }
+            .step-line { display: none; }
+            .flow-step { text-align: left; display: flex; gap: 1rem; align-items: flex-start; padding: 0; }
+            .step-number { flex-shrink: 0; margin-bottom: 0; }
+          }
+        </style>
+        <div class="section-heading">
+          <p class="eyebrow">探索流程</p>
+          <h2>从一次好奇，到一本可分享的非书</h2>
+        </div>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-line"></div>
+            <div class="step-number">1</div>
+            <div>
+              <strong>放入起点</strong>
+              <p>粘贴文章链接或文本，AI 先理解你的兴趣。</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-line"></div>
+            <div class="step-number">2</div>
+            <div>
+              <strong>选择方向</strong>
+              <p>深入、跨界、人物、观点挑战……每个方向都是新可能。</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-line"></div>
+            <div class="step-number">3</div>
+            <div>
+              <strong>挑选章节</strong>
+              <p>在候选文章中挑选下一章，阅读「知识桥」了解连接理由。</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-number">4</div>
+            <div>
+              <strong>装订成书</strong>
+              <p>3 章即可成书，生成封面、目录、导读和策展人点评。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="section-block">
         <div class="section-heading">
           <p class="eyebrow">为什么需要非书？</p>
@@ -685,19 +828,6 @@ function renderLanding() {
           <article><span class="feature-icon">01</span><strong>从文章到兴趣</strong><p>先理解你给出的文章，再提炼可继续探索的概念、争议和案例。</p></article>
           <article><span class="feature-icon">02</span><strong>从推荐到策展</strong><p>AI 给出方向和候选，你用选择把章节编成自己的样子。</p></article>
           <article><span class="feature-icon">03</span><strong>从阅读到非书</strong><p>写到 3 章即可装订，也可以继续收入新的章节。</p></article>
-        </div>
-      </section>
-
-      <section class="section-block landing-flow">
-        <div class="section-heading">
-          <p class="eyebrow">如何使用非书？</p>
-          <h2>从一次好奇，到一本可分享的非书。</h2>
-        </div>
-        <div class="flow-grid">
-          <article><span>1</span><strong>放入起点</strong><p>输入文章链接，或直接粘贴标题、摘要和正文片段。</p></article>
-          <article><span>2</span><strong>选择方向</strong><p>在深入、跨界、人物、观点挑战和意外发现中前进。</p></article>
-          <article><span>3</span><strong>挑选候选</strong><p>知乎内容优先，全网搜索补充背景，每一章都解释连接理由。</p></article>
-          <article><span>4</span><strong>装订成书</strong><p>生成封面概念、目录、章节导读和策展人点评。</p></article>
         </div>
       </section>
 
@@ -719,6 +849,11 @@ function renderLanding() {
   document.querySelector("#hero-start").addEventListener("click", () => navigate("start"));
   document.querySelector("#hero-library").addEventListener("click", () => navigate("library"));
   document.querySelector("#sample-library").addEventListener("click", () => navigate("library"));
+  const bookmarkletLink = document.querySelector("#bookmarklet-link");
+  if (bookmarkletLink) {
+    const origin = window.location.origin;
+    bookmarkletLink.href = `javascript:(function(){window.open('${origin}/?url='+encodeURIComponent(location.href),'_blank');})();`;
+  }
 }
 
 function renderStart() {
@@ -751,6 +886,31 @@ function renderStart() {
             <span>写到第 3 章即可装订</span>
           </div>
           <button class="ghost-button demo-route-button" type="button" id="demo-route-button">使用演示非书</button>
+
+          <div class="featured-starts">
+            <style>
+              .featured-starts { margin-top: 2.5rem; }
+              .featured-starts-heading { font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; text-align: center; }
+              .featured-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+              .featured-card { padding: 1rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #fff; cursor: pointer; transition: all 0.2s; text-align: left; }
+              .featured-card:hover { border-color: #2563eb; box-shadow: 0 4px 12px rgba(37,99,235,0.08); transform: translateY(-2px); }
+              .featured-card .tag { display: inline-block; font-size: 0.75rem; padding: 0.25rem 0.5rem; background: #eff6ff; color: #2563eb; border-radius: 999px; margin-bottom: 0.5rem; font-weight: 500; }
+              .featured-card h4 { font-size: 0.9375rem; margin: 0 0 0.375rem; color: #0f172a; line-height: 1.4; }
+              .featured-card p { font-size: 0.8125rem; color: #64748b; margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+              @media (max-width: 768px) { .featured-grid { grid-template-columns: repeat(2, 1fr); } }
+              @media (max-width: 480px) { .featured-grid { grid-template-columns: 1fr; } }
+            </style>
+            <p class="featured-starts-heading">或从热门起点开始</p>
+            <div class="featured-grid">
+              ${featuredStarts.map((item, index) => `
+                <button class="featured-card" type="button" data-featured-index="${index}">
+                  <span class="tag">${item.tag}</span>
+                  <h4>${item.title}</h4>
+                  <p>${item.excerpt}</p>
+                </button>
+              `).join("")}
+            </div>
+          </div>
         </form>
       </div>
     </section>
@@ -766,6 +926,16 @@ function renderStart() {
   });
   document.querySelector("#start-form").addEventListener("submit", startAdventure);
   document.querySelector("#demo-route-button").addEventListener("click", startDemoAdventure);
+  document.querySelectorAll(".featured-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const index = Number(card.dataset.featuredIndex);
+      const item = featuredStarts[index];
+      if (item?.url) {
+        state.inputUrl = item.url;
+        startAdventure();
+      }
+    });
+  });
 }
 
 function candidateOptions(nextStep) {
@@ -1178,4 +1348,24 @@ function render() {
   else renderAdventure();
 }
 
-render();
+function handleUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const urlParam = params.get("url");
+  const textParam = params.get("text");
+
+  if (urlParam) {
+    state.inputUrl = urlParam;
+    startAdventure();
+    return true;
+  }
+  if (textParam) {
+    state.articleText = textParam;
+    startAdventure();
+    return true;
+  }
+  return false;
+}
+
+if (!handleUrlParams()) {
+  render();
+}

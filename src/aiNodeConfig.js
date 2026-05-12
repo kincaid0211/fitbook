@@ -5,7 +5,7 @@ export const aiNodeDefaults = {
     label: "起点理解",
     description: "解析并理解用户提供的起点文章或文本，提炼摘要、关键概念、争议点、可延展方向和初始兴趣画像。",
     provider: "siliconflow",
-    model: "Pro/moonshotai/Kimi-K2.6",
+    model: "Pro/deepseek-ai/DeepSeek-V3.2",
     temperature: 0.25,
     timeoutSeconds: 20,
     prompt:
@@ -15,7 +15,7 @@ export const aiNodeDefaults = {
     label: "下一章方向",
     description: "基于当前章内容、已有章节线索和兴趣画像，生成 3 个互相区分的下一章方向，至少包含一个意外发现选项。",
     provider: "siliconflow",
-    model: "Pro/moonshotai/Kimi-K2.6",
+    model: "Pro/deepseek-ai/DeepSeek-V3.2",
     temperature: 0.35,
     timeoutSeconds: 15,
     prompt:
@@ -35,7 +35,7 @@ export const aiNodeDefaults = {
     label: "非书生成",
     description: "把已完成的章节线索包装成一本「非书」，生成书名、序言、目录、章节导读、线索标签和阅读总结。",
     provider: "siliconflow",
-    model: "Pro/moonshotai/Kimi-K2.6",
+    model: "Pro/deepseek-ai/DeepSeek-V3.2",
     temperature: 0.45,
     timeoutSeconds: 30,
     prompt:
@@ -45,7 +45,7 @@ export const aiNodeDefaults = {
     label: "封面方案",
     description: "为非书生成结构化封面概念，包括主视觉、色彩、构图和图像生成提示词，不生成真实图片。",
     provider: "siliconflow",
-    model: "Pro/moonshotai/Kimi-K2.6",
+    model: "deepseek-ai/DeepSeek-V4-Flash",
     temperature: 0.55,
     timeoutSeconds: 15,
     prompt:
