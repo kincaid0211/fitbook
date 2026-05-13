@@ -2250,9 +2250,9 @@ h3 {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) minmax(160px, auto);
   gap: 12px;
-  align-items: center;
+  align-items: start;
   border-bottom: 1px solid var(--soft-line);
-  padding: 12px 0;
+  padding: 14px 0;
 }
 
 .chapter-row:last-child {
@@ -2263,6 +2263,76 @@ h3 {
 .author-item strong {
   display: block;
   line-height: 1.35;
+}
+
+.chapter-row-main {
+  min-width: 0;
+}
+
+.chapter-title-link {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: baseline;
+  gap: 9px;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    color 180ms var(--ease),
+    background 180ms var(--ease);
+}
+
+.chapter-title-link span {
+  display: inline;
+  border-bottom: 1px solid rgba(0, 102, 255, 0.18);
+  background-image: linear-gradient(rgba(234, 243, 255, 0), rgba(234, 243, 255, 0));
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 0;
+  line-height: 1.45;
+  transition:
+    border-color 180ms var(--ease),
+    background-size 180ms var(--ease);
+}
+
+.chapter-title-link em {
+  flex: 0 0 auto;
+  border: 1px solid var(--soft-line);
+  border-radius: 999px;
+  background: #fbfdff;
+  padding: 3px 7px;
+  color: var(--subtle);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1;
+  opacity: 0.82;
+  transform: translateY(-1px);
+  transition:
+    border-color 180ms var(--ease),
+    color 180ms var(--ease),
+    background 180ms var(--ease),
+    opacity 180ms var(--ease);
+}
+
+.chapter-title-link:hover,
+.chapter-title-link:focus-visible {
+  color: var(--blue-dark);
+}
+
+.chapter-title-link:hover span,
+.chapter-title-link:focus-visible span {
+  border-color: rgba(0, 102, 255, 0.42);
+  background-image: linear-gradient(var(--blue-soft), var(--blue-soft));
+  background-size: 100% 42%;
+}
+
+.chapter-title-link:hover em,
+.chapter-title-link:focus-visible em {
+  border-color: #b9d3ff;
+  background: var(--blue-soft);
+  color: var(--blue);
+  opacity: 1;
 }
 
 .chapter-row small,
@@ -2623,6 +2693,22 @@ h3 {
   .shelf-card {
     grid-template-columns: 118px minmax(0, 1fr);
     gap: 14px;
+  }
+
+  .chapter-row {
+    gap: 10px;
+    align-items: start;
+  }
+
+  .chapter-title-link {
+    display: grid;
+    gap: 6px;
+    align-items: start;
+  }
+
+  .chapter-title-link em {
+    width: fit-content;
+    transform: none;
   }
 
   .empty-state {

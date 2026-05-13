@@ -821,51 +821,45 @@ async function finishBook() {
     setBusy("正在把你的阅读路线装订成书...");
     const localBook = makeBook();
 
-    const existing = readLibrary();
-    writeLibrary([localBook, ...existing.filter((item) => item.id !== localBook.id)].slice(0, 12));
-    update({ view: "book", activeBook: localBook, finished: "book", loading: "", loadingStartedAt: null, error: "" });
-
-    Promise.allSettled([
+    const [bookResult, coverResult] = await Promise.allSettled([
       apiPost("/api/book", {
         route: state.route,
         interestProfile: state.interestProfile,
       }),
       apiPost("/api/cover", { book: localBook }),
-    ]).then(([bookResult, coverResult]) => {
-      let book = { ...localBook };
-      if (bookResult.status === "fulfilled") {
-        const b = bookResult.value.book || {};
-        book = {
-          ...book,
-          title: b.title || book.title,
-          subtitle: b.subtitle || book.subtitle,
-          preface: b.preface || book.preface,
-          tags: Array.isArray(b.tags) ? b.tags : book.tags,
-          style: b.style || book.style,
-          explorationSummary: b.explorationSummary || book.explorationSummary,
-          sourceAuthors: Array.isArray(b.sourceAuthors) ? b.sourceAuthors : book.sourceAuthors,
-          steps: state.route,
-        };
-      } else {
-        console.error("Book API failed:", bookResult.reason);
-      }
+    ]);
 
-      if (coverResult.status === "fulfilled" && coverResult.value.coverConcept) {
-        const cd = coverResult.value.coverConcept;
-        book.coverConcept = cd.composition || cd.imagePrompt || "";
-        book.coverData = cd;
-        book.cover = cd.cssTheme || "music";
-      } else if (coverResult.status === "rejected") {
-        console.error("Cover API failed:", coverResult.reason);
-      }
+    let book = { ...localBook };
+    if (bookResult.status === "fulfilled") {
+      const b = bookResult.value.book || {};
+      book = {
+        ...book,
+        title: b.title || book.title,
+        subtitle: b.subtitle || book.subtitle,
+        preface: b.preface || book.preface,
+        tags: Array.isArray(b.tags) ? b.tags : book.tags,
+        style: b.style || book.style,
+        explorationSummary: b.explorationSummary || book.explorationSummary,
+        sourceAuthors: Array.isArray(b.sourceAuthors) ? b.sourceAuthors : book.sourceAuthors,
+        steps: state.route,
+      };
+    } else {
+      console.error("Book API failed:", bookResult.reason);
+    }
 
-      const lib = readLibrary();
-      writeLibrary([book, ...lib.filter((item) => item.id !== book.id)].slice(0, 12));
+    if (coverResult.status === "fulfilled" && coverResult.value.coverConcept) {
+      const cd = coverResult.value.coverConcept;
+      book.coverConcept = cd.composition || cd.imagePrompt || "";
+      book.coverData = cd;
+      book.cover = cd.cssTheme || "music";
+    } else if (coverResult.status === "rejected") {
+      console.error("Cover API failed:", coverResult.reason);
+    }
 
-      if (state.activeBook?.id === localBook.id) {
-        update({ activeBook: book });
-      }
-    });
+    const lib = readLibrary();
+    writeLibrary([book, ...lib.filter((item) => item.id !== book.id)].slice(0, 12));
+
+    update({ view: "book", activeBook: book, finished: "book", loading: "", loadingStartedAt: null, error: "" });
   } catch (error) {
     setError(error);
   }
@@ -1620,8 +1614,8 @@ function renderBook(book = state.activeBook || sampleBook()) {
                 (step, index) => `
                   <div class="chapter-row">
                     <span class="chapter-index">${index + 1}</span>
-                    <div>
-                      <strong>${step.url && step.url !== "#" ? `<a href="${escapeHtml(step.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(step.title)}</a>` : escapeHtml(step.title)}</strong>
+                    <div class="chapter-row-main">
+                      <strong>${step.url && step.url !== "#" ? `<a class="chapter-title-link" href="${escapeHtml(step.url)}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(step.title)}</span><em>读原文</em></a>` : escapeHtml(step.title)}</strong>
                       <small>${step.author} · 原文入口与摘要导读</small>
                     </div>
                     <div class="tag-row compact">${step.concepts.slice(0, 2).map((tag) => `<span>${tag}</span>`).join("")}</div>
