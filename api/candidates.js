@@ -1,5 +1,12 @@
 import { methodGuard, readJson, sendJson, handleApiError } from "../lib/http.js";
 import { searchZhihuContent } from "../lib/zhihu.js";
+import { callModelJson } from "../lib/model.js";
+import {
+  curatorSystem,
+  getNodeConfig,
+  nodePrompt,
+  buildCurateCandidatesPayload,
+} from "../lib/prompts.js";
 
 function formatCount(value) {
   const count = Number(value || 0);
@@ -66,7 +73,7 @@ function topItems(items, count) {
   }));
 }
 
-function enrichedPresentation(candidate, direction, currentStep, index) {
+function fallbackPresentation(candidate, direction, currentStep, index) {
   const directionType = direction.directionType || direction.label || "下一章";
   const concept = (candidate.concepts || [])[0] || direction.label || "当前主题";
   const currentTitle = currentStep?.title || "当前章";
@@ -92,6 +99,7 @@ function enrichedPresentation(candidate, direction, currentStep, index) {
   return {
     ...candidate,
     curatedTitle: candidate.title,
+    curatorPreview: candidate.summary,
     connection,
     readerGain,
     fitTags: [directionType, ...(candidate.concepts || [])].filter(Boolean).slice(0, 3),
@@ -155,13 +163,43 @@ export default async function handler(req, res) {
       throw error;
     }
 
-    const candidates = rawCandidates.slice(0, 3).map((candidate, index) =>
-      enrichedPresentation(candidate, direction, currentStep, index)
-    );
+    // 尝试 AI 策展
+    let curatedCandidates = [];
+    try {
+      const nodeConfig = getNodeConfig(body, "candidates");
+      const curateResult = await callModelJson({
+        system: nodePrompt(curatorSystem, nodeConfig),
+        nodeConfig,
+        user: buildCurateCandidatesPayload({
+          currentStep,
+          direction,
+          candidates: rawCandidates,
+          route,
+          interestProfile: body.interestProfile,
+        }),
+      });
+
+      const presentations = curateResult.data.candidates || [];
+      curatedCandidates = rawCandidates.map((raw, index) => ({
+        ...raw,
+        curatedTitle: presentations[index]?.curatedTitle || raw.title,
+        curatorPreview: presentations[index]?.curatorPreview || raw.summary,
+        connection: presentations[index]?.connection || "",
+        readerGain: presentations[index]?.readerGain || "",
+        fitTags: presentations[index]?.fitTags || [direction.directionType],
+        originalTitle: raw.title,
+      }));
+    } catch (error) {
+      console.error("Candidates curation failed:", error);
+      // AI 失败：回退到规则化展示
+      curatedCandidates = rawCandidates.map((candidate, index) =>
+        fallbackPresentation(candidate, direction, currentStep, index)
+      );
+    }
 
     sendJson(res, 200, {
       ok: true,
-      candidates,
+      candidates: curatedCandidates.slice(0, 3),
       backgroundNotes: globalItems.map((item) => item.summary).filter(Boolean).slice(0, 2),
       message: "我为你整理了 3 个可以继续写下去的章节。",
       rawCounts: {
