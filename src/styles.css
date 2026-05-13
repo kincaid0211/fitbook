@@ -1462,10 +1462,16 @@ h3 {
   text-align: left;
 }
 
-.direction:hover,
 .direction.selected {
   border-color: var(--blue);
   background: var(--blue-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .direction:hover {
+    border-color: var(--blue);
+    background: var(--blue-soft);
+  }
 }
 
 .direction span {
@@ -1992,12 +1998,20 @@ h3 {
   box-shadow: none;
 }
 
-.chapter-choice:hover,
 .chapter-choice.selected {
   border-color: var(--blue);
   background: #f4f9ff;
   box-shadow: 0 14px 30px rgba(0, 102, 255, 0.1);
   transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chapter-choice:hover {
+    border-color: var(--blue);
+    background: #f4f9ff;
+    box-shadow: 0 14px 30px rgba(0, 102, 255, 0.1);
+    transform: none;
+  }
 }
 
 .chapter-choice strong {
