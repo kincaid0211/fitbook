@@ -60,7 +60,7 @@ const state = {
   loadingStartedAt: null,
   error: "",
   useDemo: false,
-  inputUrl: sampleUrl,
+  inputUrl: "",
   articleText: "",
   finished: false,
   activeBook: null,
@@ -464,10 +464,28 @@ function parseZhihuUrl(input) {
   return null;
 }
 
-function detectStartInput(input, text) {
+function detectStartInput(input, text, mode = 'auto') {
   const trimmedInput = input.trim();
   const trimmedText = text.trim();
   const zhihuType = parseZhihuUrl(trimmedInput);
+
+  if (mode === 'url') {
+    if (zhihuType) return { ok: true, label: zhihuType, mode: "zhihu" };
+    if (trimmedInput) {
+      try {
+        const url = new URL(trimmedInput);
+        return { ok: true, label: `${url.hostname.replace(/^www\./, "")} 文章链接`, mode: "external" };
+      } catch {
+        return { ok: false, label: "请输入有效的文章或问题链接。" };
+      }
+    }
+    return { ok: false, label: "请输入文章或问题链接。" };
+  }
+
+  if (mode === 'text') {
+    if (trimmedText.length >= 20) return { ok: true, label: "粘贴文本片段", mode: "text" };
+    return { ok: false, label: "请粘贴至少 20 字的正文片段。" };
+  }
 
   if (zhihuType) return { ok: true, label: zhihuType, mode: "zhihu" };
 
@@ -557,9 +575,9 @@ function navigate(view) {
   update({ view, selectedDirection: null, selectedCandidate: null, activeBook: null });
 }
 
-async function startAdventure(event, hotItem = null) {
+async function startAdventure(event, hotItem = null, mode = 'auto') {
   event?.preventDefault();
-  const detection = detectStartInput(state.inputUrl, state.articleText);
+  const detection = detectStartInput(state.inputUrl, state.articleText, mode);
   if (!detection.ok) {
     update({ selectedDirection: detection.label });
     return;
@@ -757,7 +775,7 @@ function restart() {
     selectedCandidate: null,
     candidates: [],
     interestProfile: {},
-    inputUrl: sampleUrl,
+    inputUrl: "",
     articleText: "",
     useDemo: false,
     loading: "",
@@ -1052,84 +1070,23 @@ function renderStart() {
   app.innerHTML = `
     <section class="screen start-screen">
       ${nav("start")}
+
       <header class="start-hero-card">
         <div>
           <p class="eyebrow">开始一本新的非书</p>
-          <h1>把一篇文章，变成你的阅读起点。</h1>
-          <p class="lead">粘贴知乎内容、网页链接或一段正文。AI 会先提炼知识卡片，你选择一个锚点，再进入章节式探索。</p>
-        </div>
-        <div class="start-hero-metrics" aria-label="非书流程概览">
-          <span><strong>3-6</strong> 张知识卡片</span>
-          <span><strong>3</strong> 章即可装订</span>
-          <span><strong>10</strong> 章内完成</span>
+          <h1>选择你的起点</h1>
+          <p class="lead">从热榜选一个话题，或粘贴你自己的文章。AI 会提炼知识卡片，你选一个锚点，再进入章节式探索。</p>
         </div>
       </header>
 
-      <div class="start-layout">
-        <form class="start-panel start-compose" id="start-form">
-          <div class="start-panel-head">
-            <p class="eyebrow">第一步</p>
-            <h2>放入你的起点</h2>
-            <p>它可以是一篇知乎回答、一条热榜问题，也可以是你正在读的一段文字。</p>
-          </div>
-
-          <label for="url-input">文章或问题链接</label>
-          <div class="input-row">
-            <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意文章链接" />
-            <button type="submit">理解起点</button>
-          </div>
-          <div class="paste-block">
-            <label for="article-input">或者，直接粘贴正文片段</label>
-            <textarea id="article-input" rows="6" placeholder="粘贴标题、摘要或正文片段。只放最有感觉的一段也可以，AI 会保持克制地理解。">${state.articleText}</textarea>
-          </div>
-          <p class="${detected.ok ? "hint good" : "hint"}">${detected.ok ? `已识别：${detected.label}` : state.selectedDirection || detected.label}</p>
-          ${state.error ? `<p class="error-message">${state.error}</p>` : ""}
-          <div class="start-ai-notes">
-            <span>不替代原文全文</span>
-            <span>优先连接知乎内容</span>
-            <span>保留你的选择</span>
-          </div>
-
-          <div class="start-form-actions">
-            <button class="ghost-button demo-route-button" type="button" id="demo-route-button">先看示例非书</button>
-          </div>
-        </form>
-
-        <aside class="start-companion" aria-label="起点理解流程">
-          <section class="start-flow-card">
-            <p class="eyebrow">接下来</p>
-            <h2>先选锚点，再写章节。</h2>
-            <ol class="start-steps-list">
-              <li>
-                <span>01</span>
-                <div>
-                  <strong>理解起点</strong>
-                  <p>AI 读取可获得的信息，提炼主题、概念、争议和延展方向。</p>
-                </div>
-              </li>
-              <li>
-                <span>02</span>
-                <div>
-                  <strong>选择知识卡片</strong>
-                  <p>你从 3-6 张卡片中选一个锚点，决定这本非书的第一条线索。</p>
-                </div>
-              </li>
-              <li>
-                <span>03</span>
-                <div>
-                  <strong>挑下一章</strong>
-                  <p>系统连接知乎优质内容和必要背景，每一章都由你确认。</p>
-                </div>
-              </li>
-            </ol>
-          </section>
-
-          <section class="zhihu-fit-card">
-            <p class="eyebrow">知乎生态</p>
-            <h2>让热议内容继续生长。</h2>
-            <p>非书会把热榜、回答、文章和搜索结果组织成可继续阅读的章节线索，保留原文入口，也保留创作者和讨论现场。</p>
-          </section>
-        </aside>
+      <div class="start-flow-bar">
+        <div class="flow-bar-step active"><span>1</span><p>选择起点</p></div>
+        <div class="flow-bar-arrow"></div>
+        <div class="flow-bar-step"><span>2</span><p>AI 提炼卡片</p></div>
+        <div class="flow-bar-arrow"></div>
+        <div class="flow-bar-step"><span>3</span><p>选一个锚点</p></div>
+        <div class="flow-bar-arrow"></div>
+        <div class="flow-bar-step"><span>4</span><p>开始探索</p></div>
       </div>
 
       <section class="featured-starts">
@@ -1137,21 +1094,61 @@ function renderStart() {
           <div>
             <p class="eyebrow">今日入口</p>
             <h2>从知乎热榜直接开始</h2>
+            <p class="featured-hint">点击任意话题，AI 会为你提炼 3-6 张知识卡片</p>
           </div>
           <button class="refresh-hotlist" type="button" id="refresh-hotlist" ${state.hotListLoading ? "disabled" : ""}>
             ${state.hotListLoading ? "刷新中..." : "刷新热榜"}
           </button>
         </div>
         ${state.hotListError ? `<div class="hotlist-error">${state.hotListError}</div>` : ""}
+        <p class="scroll-hint">← 左右滑动查看更多 →</p>
         <div class="featured-grid">
           ${state.hotList.map((item, index) => `
             <button class="featured-card" type="button" data-hot-index="${index}">
               <span class="tag">${item.tag}</span>
               <h4>${item.title}</h4>
               <p>${item.excerpt}</p>
-              <small>用这个问题开启非书</small>
+              <div class="featured-card-action">
+                <span>AI 提炼知识卡片</span>
+                <span>→</span>
+              </div>
             </button>
           `).join("")}
+        </div>
+      </section>
+
+      <section class="start-input-section">
+        <p class="eyebrow">自定义起点</p>
+        <h2>放入你自己的起点</h2>
+        <p class="input-section-hint">粘贴任意文章链接或正文片段，AI 同样会为你提炼知识卡片</p>
+
+        <div class="link-input-block">
+          <label for="url-input">文章或问题链接</label>
+          <div class="input-row url-input-row">
+            <span class="input-icon">🔗</span>
+            <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意网页链接" />
+            <button type="button" id="url-submit">开始理解</button>
+          </div>
+        </div>
+
+        <div class="input-divider"><span>或者</span></div>
+
+        <div class="text-input-block">
+          <label for="article-input">直接粘贴正文片段</label>
+          <textarea id="article-input" rows="5" placeholder="粘贴标题、摘要或正文片段。只放最有感觉的一段也可以，AI 会保持克制地理解。">${state.articleText}</textarea>
+          <button type="button" class="primary-wide" id="text-submit">开始理解</button>
+        </div>
+
+        <p class="${detected.ok ? "hint good" : "hint"}">${detected.ok ? `已识别：${detected.label}` : state.selectedDirection || detected.label}</p>
+        ${state.error ? `<p class="error-message">${state.error}</p>` : ""}
+        <div class="start-ai-notes">
+          <span>不替代原文全文</span>
+          <span>优先连接知乎内容</span>
+          <span>保留你的选择</span>
+        </div>
+
+        <div class="start-form-actions">
+          <button class="ghost-button demo-route-button" type="button" id="demo-route-button">先看示例非书</button>
         </div>
       </section>
     </section>
@@ -1165,7 +1162,8 @@ function renderStart() {
   document.querySelector("#article-input").addEventListener("input", (event) => {
     state.articleText = event.target.value;
   });
-  document.querySelector("#start-form").addEventListener("submit", startAdventure);
+  document.querySelector("#url-submit").addEventListener("click", (event) => startAdventure(event, null, "url"));
+  document.querySelector("#text-submit").addEventListener("click", (event) => startAdventure(event, null, "text"));
   document.querySelector("#demo-route-button").addEventListener("click", startDemoAdventure);
   document.querySelector("#refresh-hotlist")?.addEventListener("click", () => fetchHotList(true));
   document.querySelectorAll(".featured-card").forEach((card) => {
