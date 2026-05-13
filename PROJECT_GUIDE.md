@@ -164,9 +164,29 @@ npm run probe:global-search
 
 ### 方式一：Vercel 正式部署
 
-1. 将仓库推送到 GitHub。
-2. 在 Vercel 中导入该仓库。
-3. 配置环境变量：
+当前生产 Demo URL：
+
+```text
+https://feishu-zhihu-hackathon.vercel.app
+```
+
+Vercel 项目：
+
+```text
+kincaid0211-1062s-projects/feishu-zhihu-hackathon
+```
+
+正式入口使用 `/`，后端 API 使用 Vercel Serverless Functions，路径为 `/api/*`。
+
+部署或重新部署：
+
+```bash
+vercel deploy --prod
+```
+
+首次部署时已创建 `.vercel/` 本地项目绑定目录，且 `.gitignore` 已忽略该目录。当前 GitHub 仓库尚未连接 Vercel Git Integration；如需每次 push 自动部署，需要先在 Vercel 账号中连接 GitHub。
+
+线上生产环境变量需要在 Vercel 项目中配置：
 
 ```text
 ZHIHU_ACCESS_SECRET=...
@@ -180,14 +200,6 @@ SILICONFLOW_CHOOSE_MODEL=THUDM/GLM-4-32B-0414
 SILICONFLOW_BOOK_MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507
 SILICONFLOW_COVER_MODEL=THUDM/GLM-4-32B-0414
 ```
-
-4. 正式访问入口使用：
-
-```text
-/
-```
-
-5. 后端 API 使用 Vercel Serverless Functions，路径为 `/api/*`。
 
 注意：
 
@@ -249,6 +261,12 @@ git push fitbook master
 
 ### 2026-05-13
 
+- **Vercel 生产部署完成**：项目发布到 `https://feishu-zhihu-hackathon.vercel.app`，Vercel 项目为 `kincaid0211-1062s-projects/feishu-zhihu-hackathon`；已配置生产环境变量 `ZHIHU_ACCESS_SECRET` 与 `SILICONFLOW_*`，重新部署后验证首页返回 200，`/api/hotlist` 返回真实知乎热榜数据。
+- **自定义域名绑定**：购买并绑定 `flybook2.space` 为生产自定义域名，Vercel 自动签发 SSL 证书；国内用户可通过 `https://flybook2.space` 直接访问，无需翻墙。
+- **创建 `vercel.json`**：补充 API CORS headers 和路由配置，确保跨域请求和 Serverless Functions 正确路由。
+- **修复 Vercel Serverless 崩溃问题**：`jsdom@29.1.1` 在 Vercel serverless Node.js 环境中因 `html-encoding-sniffer` 的 ESM require 兼容性问题导致 `FUNCTION_INVOCATION_FAILED`，降级到 `jsdom@24.0.0` 后 `/api/start` 等依赖网页解析的接口恢复正常。
+- **补齐环境变量**：新增 `SILICONFLOW_FAST_MODEL` 到 Vercel 生产环境，确保快慢模型分层节点能正确命中快速模型。
+- 首次 Vercel CLI 部署创建了本地 `.vercel/` 绑定目录，并将 `.vercel` 加入 `.gitignore`；当前 GitHub 仓库未连接 Vercel Git Integration，后续自动部署需在 Vercel 账号中补充 GitHub 登录连接。
 - 重新设计"选择下一章"候选弹窗：顶部改为"已选方向"摘要与当前推荐判断，中部改为三列候选比较卡，卡片按"来源/标题/一句话判断/怎么接上前文/读完获得什么/标签"展示，移除原先堆叠长段落和底部重复可信信号，避免内容压住按钮区。
 - 候选弹窗样式同步优化：扩大桌面端弹窗宽度，增加当前选择摘要条，限制摘要与理由文本行数，修复卡片标题裁切问题，并在窄屏下自动切回单列显示。
 - 重新生成 `dist/demo.html`，运行 `npm run check`；使用 `127.0.0.1:5174` 打开演示流程并核验"开始探索 -> 先看示例非书 -> 选择方向 -> 候选弹窗"视觉状态，浏览器控制台无错误。

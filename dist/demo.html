@@ -1379,6 +1379,12 @@ textarea:focus {
   background: var(--blue);
 }
 
+.chapter-marks span.current {
+  border-color: var(--blue);
+  color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
 .book-ready,
 .book-pending {
   border-radius: 999px;
@@ -3656,7 +3662,6 @@ async function goNext() {
       selectedDirection: null,
       selectedCandidate: null,
       candidates: [],
-      finished: nextIndex === adventure.steps.length - 1,
     });
     return;
   }
@@ -3688,7 +3693,6 @@ async function goNext() {
       selectedCandidate: null,
       candidates: [],
       interestProfile: data.interestProfile || state.interestProfile,
-      finished: nextRoute.length >= 10,
       loading: "",
       loadingStartedAt: null,
       error: "",
@@ -3696,7 +3700,7 @@ async function goNext() {
     render();
     window.scrollTo({ top: 0, left: 0 });
 
-    if (!state.finished && !data.directions?.length) {
+    if (nextRoute.length < 10 && !data.directions?.length) {
       setBusy("正在想下一章可以往哪里走...");
       await refreshDirections(data.step);
     }
@@ -3712,7 +3716,6 @@ function goNextMockPreview() {
     route: adventure.steps.slice(0, nextIndex + 1),
     selectedDirection: null,
     selectedCandidate: null,
-    finished: nextIndex === adventure.steps.length - 1,
   });
 }
 
@@ -4402,21 +4405,21 @@ function renderAdventure() {
         <div>
           <p class="eyebrow">非书 · 第 ${state.route.length} 章</p>
           <h1>你的非书已写到第 ${state.route.length} 章</h1>
-          <p class="header-subtitle">${canFinishEarly ? `这本书已经有 ${state.route.length} 章了，现在就可以装订。当然，你也可以继续读下去。` : `再读 ${3 - state.route.length} 章，就可以装订成书了。`}</p>
+          <p class="header-subtitle">${canFinishEarly ? `这本书已经有 ${state.route.length} 章了，现在就可以装订。${state.route.length >= 10 ? "已到达上限。" : "当然，你也可以继续读下去。"}` : `再读 ${3 - state.route.length} 章，就可以装订成书了。`}</p>
         </div>
         <div class="header-actions">
-          ${canFinishEarly && !state.finished ? `<button class="ghost-button" id="early-book-button">装订这本非书</button>` : ""}
+          ${canFinishEarly && state.finished !== "book" ? `<button class="ghost-button" id="early-book-button">装订这本非书</button>` : ""}
           <button class="ghost-button" id="restart-button">另起一本</button>
         </div>
       </header>
       ${state.error ? `<div class="error-banner">${state.error}</div>` : ""}
       <section class="chapter-status" aria-label="成书状态">
         <div class="chapter-marks">
-          ${[1, 2, 3]
-            .map((count) => `<span class="${state.route.length >= count ? "complete" : ""}">第 ${count} 章</span>`)
+          ${Array.from({ length: Math.min(state.route.length, 10) }, (_, i) => i + 1)
+            .map((count) => `<span class="${state.route.length >= count ? "complete" : ""} ${count === state.route.length ? "current" : ""}">第 ${count} 章</span>`)
             .join("")}
         </div>
-        <strong class="${canFinishEarly ? "book-ready" : "book-pending"}">${canFinishEarly ? "已可成书" : `还需 ${3 - state.route.length} 章`}</strong>
+        <strong class="${canFinishEarly ? "book-ready" : "book-pending"}">第 ${state.route.length} 章 / 最多 10 章</strong>
       </section>
 
       <div class="chapter-layout">
@@ -4434,7 +4437,7 @@ function renderAdventure() {
               )
               .join("")}
           </div>
-          <p class="chapter-toc-note">满 3 章即可装订</p>
+          <p class="chapter-toc-note">${state.route.length >= 3 ? `已有 ${state.route.length} 章，可随时装订` : `满 3 章即可装订`}</p>
         </aside>
 
         <main class="chapter-flow">
@@ -4495,7 +4498,7 @@ function renderAdventure() {
                   ? `<div class="empty-next-step"><p>下一章方向正在整理中，稍等片刻就可以继续选择。</p></div>`
                   : canFinishEarly
                     ? `<div class="empty-next-step">
-                        <p>这本书已经可以装订了。你也可以继续读，把它写得更厚。</p>
+                        <p>${state.route.length >= 10 ? "已到达最后一章，现在可以装订你的非书。" : "这本书已经可以装订了。你也可以继续读，把它写得更厚。"}</p>
                         <button id="book-button" class="primary-wide" type="button">装订这本非书</button>
                       </div>`
                     : `<div class="empty-next-step"><p>暂时没有找到方向。你可以稍后再试，或另起一本非书。</p></div>`

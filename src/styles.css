@@ -1373,6 +1373,12 @@ textarea:focus {
   background: var(--blue);
 }
 
+.chapter-marks span.current {
+  border-color: var(--blue);
+  color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
 .book-ready,
 .book-pending {
   border-radius: 999px;

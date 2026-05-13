@@ -46,6 +46,11 @@ The confirmed implementation plan uses Vercel as the official deployment target:
 - SiliconFlow OpenAI-compatible chat completions as the LLM backend.
 - `dist/demo.html` as a backup standalone demo.
 
+**Production URLs:**
+
+- Custom domain: `https://flybook2.space`
+- Vercel default: `https://feishu-zhihu-hackathon.vercel.app`
+
 Required environment variables:
 
 ```text
