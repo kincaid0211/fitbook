@@ -1462,7 +1462,7 @@ function renderAdventure() {
             </div>
             <article class="reading-card chapter-reading-card">
               <div class="article-meta">第 ${state.currentIndex + 1} 章 · ${step.author || "来源待确认"}</div>
-              <h3>${step.title}</h3>
+              <h3>${step.url && step.url !== "#" ? `<a href="${escapeHtml(step.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(step.title)}</a>` : escapeHtml(step.title)}</h3>
               ${
                 step.needsUserText
                   ? `<p class="reading-note">这段链接的内容读取不完整，导读基于标题和摘要生成。不影响继续阅读。</p>`
@@ -1620,7 +1620,7 @@ function renderBook(book = state.activeBook || sampleBook()) {
                   <div class="chapter-row">
                     <span class="chapter-index">${index + 1}</span>
                     <div>
-                      <strong>${step.title}</strong>
+                      <strong>${step.url && step.url !== "#" ? `<a href="${escapeHtml(step.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(step.title)}</a>` : escapeHtml(step.title)}</strong>
                       <small>${step.author} · 原文入口与摘要导读</small>
                     </div>
                     <div class="tag-row compact">${step.concepts.slice(0, 2).map((tag) => `<span>${tag}</span>`).join("")}</div>
