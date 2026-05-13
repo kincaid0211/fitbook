@@ -234,6 +234,8 @@
 
 - [ ] 优化整体视觉风格
 - [x] 修复 AI 处理期间页面仍可误操作的问题（全局 busy 状态 + 按钮禁用 + 事件拦截）
+- [x] 修复探索页选择方向后流程中断（candidates 防御性校验 + 知乎搜索超时）
+- [x] 修复方向选择后候选弹窗未显示根因（`chooseDirection` 补 `selectedDirection: direction`）
 - [ ] 优化移动端体验
 - [ ] 加入探索风格和通关反馈
 - [ ] 加入路线标签和探索总结
@@ -300,6 +302,8 @@
 - 入口体验增强完成：支持 URL 参数预填充（`?url=` / `?text=`）、6 个精选起点卡片、Bookmarklet 书签拖拽、知乎热榜实时拉取与刷新。
 - 落地页重新设计完成：使用方法引导前置，3 种启动方式卡片 + 4 步流程时间线，降低用户首次访问的认知门槛。
 - AI 处理期间全屏思考模态框已落地：6 阶段趣味文案轮播 + spinner 动画 + 计时器，backdrop 阻断交互，替代生硬的全局按钮禁用方案。
+- **前端防御性修复已落地**：`chooseDirection` 对 `data.candidates` 做数组校验，`renderCandidateModal` 增加 undefined/null 防御，避免 API 异常时页面卡死；知乎搜索添加 15 秒超时，防止 API 挂起导致前端长时间无响应。
+- **候选弹窗未显示根因修复**：`chooseDirection` 真实 API 成功分支的 `update({...})` 漏写 `selectedDirection: direction`，导致 `renderCandidateModal` 的 `!state.selectedDirection` 守卫始终为真、弹窗永远不渲染。已补回该字段并重新构建 `dist/demo.html`。
 
 ### 主要缺口
 

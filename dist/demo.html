@@ -3499,9 +3499,11 @@ async function chooseDirection(direction) {
       route: state.route,
       interestProfile: state.interestProfile,
     });
+    const candidates = Array.isArray(data.candidates) ? data.candidates : [];
     update({
-      candidates: data.candidates,
-      selectedCandidate: data.candidates?.[0] || null,
+      selectedDirection: direction,
+      candidates,
+      selectedCandidate: candidates[0] || null,
       loading: "",
       loadingStartedAt: null,
       error: "",
@@ -4185,7 +4187,7 @@ function candidateTags(candidate) {
 }
 
 function renderCandidateModal(candidates, selectedDirectionText) {
-  if (!state.selectedDirection || !candidates.length) return "";
+  if (!state.selectedDirection || !candidates || !candidates.length) return "";
   return `
     <div class="modal-backdrop" role="presentation">
       <section class="chapter-modal" role="dialog" aria-modal="true" aria-labelledby="chapter-modal-title">

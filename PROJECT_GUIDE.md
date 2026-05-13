@@ -249,10 +249,13 @@ git push fitbook master
 
 ### 2026-05-13
 
-- 重新设计开始探索页：首屏改为“起点说明 + 关键流程指标”，主体改为左侧输入起点、右侧展示“理解起点 → 选择知识卡片 → 挑下一章”的新流程，底部保留知乎热榜入口池，减少旧版大面积空白和窄栏挤压。
+- **修复方向选择后候选弹窗未显示根因**：`src/app.js` 的 `chooseDirection` 真实 API 成功分支 `update({...})` 漏写 `selectedDirection: direction`，导致 `renderCandidateModal` 守卫 `!state.selectedDirection` 始终为真、候选章节弹窗永远不渲染——用户表现为"思考模态框弹出后立即消失，没有任何反馈"。已在 update 中补回该字段并重新生成 `dist/demo.html`。
+- **修复探索页选择方向后流程中断问题**：`src/app.js` 中 `chooseDirection` 增加 `data.candidates` 的数组校验，`renderCandidateModal` 增加 `candidates` 的 undefined/null 防御，防止 API 返回异常时 `TypeError` 导致页面卡死。
+- **为知乎搜索添加 15 秒超时**：`lib/zhihu.js` 中 `searchZhihuContent` 增加 `AbortController`，避免 API 挂起时前端长时间无响应。
+- 重新设计开始探索页：首屏改为"起点说明 + 关键流程指标"，主体改为左侧输入起点、右侧展示"理解起点 → 选择知识卡片 → 挑下一章"的新流程，底部保留知乎热榜入口池，减少旧版大面积空白和窄栏挤压。
 - 起点页文案同步到新版功能：强调 AI 先提炼 3-6 张知识卡片、用户选择锚点后进入章节式探索，并明确不替代原文全文、优先连接知乎内容、保留用户选择。
 - 更新 `scripts/build-standalone.mjs`：单文件演示现在会内联 `src/aiNodeConfig.js`，避免 `dist/demo.html` 残留模块 import 导致直接打开时脚本报错。
-- 更新 `scripts/test-entry-features.mjs`：入口测试从旧“精选起点”口径调整为“知乎热榜入口”，并继续覆盖 Bookmarklet、URL/text 参数自动触发和起点页卡片渲染。
+- 更新 `scripts/test-entry-features.mjs`：入口测试从旧"精选起点"口径调整为"知乎热榜入口"，并继续覆盖 Bookmarklet、URL/text 参数自动触发和起点页卡片渲染。
 - 重新运行 `npm run check`、`npm run build:standalone` 和 `node scripts/test-entry-features.mjs`，本地冒烟检查与 12 项入口测试全部通过。当前沙箱不允许监听本地预览端口，Playwright CLI 需要联网拉取依赖但网络受限，浏览器截图核验待在正常本地环境补测。
 - 拉取硅基流动当前 `/models` 列表（102 个模型），对 `start / candidates / directions / choose / book / cover` 六个 AI 节点做结构化 JSON 响应测试，新增 `docs/SILICONFLOW_MODEL_BENCHMARK.md` 记录模型清单筛选、实测耗时和节点配置方案。
 - 更新服务端节点默认模型：`start/candidates/directions/choose/cover` 默认使用 `THUDM/GLM-4-32B-0414`，`book` 默认使用 `Qwen/Qwen3-30B-A3B-Instruct-2507`；新增 `SILICONFLOW_START_MODEL`、`SILICONFLOW_CANDIDATES_MODEL`、`SILICONFLOW_DIRECTIONS_MODEL`、`SILICONFLOW_CHOOSE_MODEL`、`SILICONFLOW_BOOK_MODEL`、`SILICONFLOW_COVER_MODEL` 六个环境变量覆盖口。
@@ -266,7 +269,7 @@ git push fitbook master
 - 新增精选起点卡片：起点页底部展示 6 个高质量知乎问题卡片（音乐、认知、AI、心理学、社会、成长），用户零输入即可启动探索。
 - 新增 Bookmarklet：落地页新增可拖拽书签链接，用户拖到浏览器书签栏后，在任意网页点击即可一键开启非书探索。
 - AI 响应时间优化方案全量落地：超时下限从 15 秒放开到 5 秒，并按节点类型设置默认超时（start 20s / directions 15s / choose 25s / book 30s / cover 15s）。
-- `lib/model.js` 增加 `max_tokens` 按节点控制输出长度（start 900 / directions 700 / choose 1400 / book 1100 / cover 700）。
+- `lib/model.js` 增加 `max_tokens` 按节点控制输出长度(start 900 / directions 700 / choose 1400 / book 1100 / cover 700)。
 - `/api/start` 直接返回首站 3 个方向（`buildInitialDirections` 基于 `extensionDirections` + `searchKeywords` 规则生成），前端不再串行调用 `/api/directions`，起点阶段减少 1 次 AI 调用。
 - `/api/book` 改为只生成书籍元信息（title/subtitle/preface/tags/style/explorationSummary/sourceAuthors），`steps` 直接用 `route`，不再让模型重写完整 chapters。
 - `/api/candidates` 改用 `Promise.allSettled`，单侧搜索失败仍返回部分候选；移除 AI enrich 中的大模型调用，改为纯规则包装（`enrichedPresentation` 按 directionType 生成 connection/readerGain/fitTags）。
@@ -338,7 +341,7 @@ git push fitbook master
 - 本地开发服务 `scripts/dev-server.mjs` 新增 `/api/*` 动态路由支持，便于本地测试 Vercel Serverless 函数。
 - 已用硅基流动备用模型完成 API 烟测：`/api/start`、`/api/candidates`、`/api/choose`、`/api/book` 和 `/api/cover` 均能返回结构化结果；`/api/candidates` 同时成功调用知乎搜索和全网搜索。
 - 新增 `docs/TECHNICAL_PLAN.md`，记录早期技术方案：Vercel 部署、Serverless API、网页解析依赖、知乎/全网搜索代理、localStorage 存储、错误处理和实施顺序；当前大模型配置已更新为硅基流动节点级模型。
-- 明确 Vercel 正式入口使用 `/`，`dist/demo.html` 作为备用单文件演示；当前环境变量以本文上方“部署方式”章节为准。
+- 明确 Vercel 正式入口使用 `/`，`dist/demo.html` 作为备用单文件演示；当前环境变量以本文上方"部署方式"章节为准。
 - 新增硅基流动作为测试/备用模型服务的配置说明：`SILICONFLOW_API_KEY`、`SILICONFLOW_BASE_URL` 和 `SILICONFLOW_MODEL`；真实密钥只保存在本地 ignored 环境文件或 Vercel 环境变量。
 - 明确 Kimi 调用失败时直接给用户失败提示，不静默回退到 mock 数据；mock 路线只作为用户手动选择的演示备用入口。
 - 按核心 AI 功能逻辑更新原型界面：落地页和起点页从"知乎链接起点"调整为"任意文章链接或粘贴文本起点"，突出 AI 知识策展人、兴趣驱动探索、候选内容选择和自动封面生成。
