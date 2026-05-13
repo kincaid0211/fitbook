@@ -107,7 +107,12 @@
 }
 
 .toggle-icon {
+  border: 1px solid var(--soft-line);
+  border-radius: 999px;
+  background: #fbfdff;
+  padding: 5px 9px;
   font-size: 12px;
+  font-weight: 850;
   color: var(--muted);
   transition: transform 0.2s ease;
 }

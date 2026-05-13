@@ -16,10 +16,17 @@
   --blue: #0066ff;
   --blue-dark: #004dd6;
   --blue-soft: #eaf3ff;
+  --blue-quiet: #f3f8ff;
   --cyan: #2cc8ff;
   --orange: #f08a4b;
   --gold: #f4b83f;
+  --green: #0f8f7a;
+  --green-soft: #e9f7f4;
   --violet: #6d63ff;
+  --radius: 8px;
+  --shadow-soft: 0 18px 45px rgba(20, 67, 128, 0.07);
+  --shadow-lift: 0 24px 54px rgba(0, 102, 255, 0.12);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -33,14 +40,16 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 18% 14%, rgba(0, 102, 255, 0.11), transparent 32%),
     linear-gradient(180deg, #f7fbff 0%, #eef6ff 48%, #f8fbff 100%);
   color: var(--ink);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -53,9 +62,10 @@ button {
   cursor: pointer;
   font-weight: 800;
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease;
+    transform 180ms var(--ease),
+    box-shadow 180ms var(--ease),
+    border-color 180ms var(--ease),
+    background 180ms var(--ease);
 }
 
 button:hover {
@@ -68,6 +78,54 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
   transform: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(0, 102, 255, 0.18);
+  outline-offset: 3px;
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+input,
+textarea,
+select {
+  border: 1px solid #bdd6ff;
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  line-height: 1.6;
+  transition:
+    border-color 180ms var(--ease),
+    box-shadow 180ms var(--ease),
+    background 180ms var(--ease);
+}
+
+input,
+select {
+  min-height: 48px;
+  padding: 0 14px;
+}
+
+textarea {
+  padding: 13px 14px;
+  resize: vertical;
+}
+
+input:hover,
+textarea:hover,
+select:hover,
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #7fb3ff;
+  box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.08);
 }
 
 h1,
@@ -102,6 +160,7 @@ h3 {
   width: min(1360px, calc(100vw - 40px));
   margin: 0 auto;
   padding: 22px 0 56px;
+  animation: pageEnter 360ms var(--ease) both;
 }
 
 .topbar {
@@ -321,6 +380,14 @@ h3 {
   margin-bottom: 18px;
 }
 
+.section-intro {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
 .section-heading.row {
   display: flex;
   align-items: flex-end;
@@ -374,6 +441,186 @@ h3 {
 .feature-grid article {
   min-height: 180px;
   padding: 26px;
+}
+
+.how-to-start,
+.landing-flow {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.7);
+  padding: clamp(24px, 4vw, 40px);
+  box-shadow: var(--shadow-soft);
+}
+
+.how-to-start {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(245, 250, 255, 0.9)),
+    linear-gradient(90deg, rgba(15, 143, 122, 0.06), rgba(0, 102, 255, 0.06));
+}
+
+.start-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.start-method-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 234px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 22px;
+  text-align: left;
+  transition:
+    transform 180ms var(--ease),
+    border-color 180ms var(--ease),
+    box-shadow 180ms var(--ease),
+    background 180ms var(--ease);
+}
+
+.start-method-card:hover {
+  border-color: #9bc5ff;
+  background: #fff;
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+
+.method-icon {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  margin-bottom: 18px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.start-method-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.start-method-card p {
+  flex: 1;
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.method-action {
+  margin-top: auto;
+}
+
+.start-method-card button {
+  width: 100%;
+}
+
+.bookmarklet-mini {
+  display: grid;
+  gap: 8px;
+}
+
+.bookmarklet-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid #b9d3ff;
+  border-radius: var(--radius);
+  background: var(--blue);
+  color: #fff;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: grab;
+  box-shadow: 0 14px 30px rgba(0, 102, 255, 0.16);
+  transition:
+    transform 180ms var(--ease),
+    box-shadow 180ms var(--ease),
+    background 180ms var(--ease);
+}
+
+.bookmarklet-link:hover {
+  background: var(--blue-dark);
+  box-shadow: 0 18px 38px rgba(0, 102, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.bookmarklet-hint {
+  color: var(--subtle);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.journey-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 26px;
+}
+
+.journey-step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  text-align: center;
+}
+
+.step-number {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #bdd6ff;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--blue);
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(20, 67, 128, 0.08);
+}
+
+.journey-line {
+  position: absolute;
+  top: 21px;
+  left: calc(50% + 30px);
+  right: calc(-50% + 30px);
+  height: 1px;
+  background: var(--line);
+}
+
+.journey-step:last-child .journey-line {
+  display: none;
+}
+
+.journey-step strong {
+  display: block;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.journey-step p {
+  max-width: 220px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .feature-icon {
@@ -872,10 +1119,18 @@ h3 {
   font-weight: 900;
 }
 
+.action-mark {
+  border-radius: 999px;
+  background: var(--blue-soft);
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
 .input-section-hint {
   margin: -12px 0 16px;
   color: var(--muted);
   font-size: 15px;
+  line-height: 1.65;
 }
 
 .url-input-row {
@@ -908,6 +1163,79 @@ h3 {
 .url-input-row button {
   border-radius: 0 8px 8px 0;
   padding: 0 20px;
+}
+
+.hint,
+.error-message,
+.error-banner {
+  border-radius: var(--radius);
+  padding: 11px 13px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.65;
+}
+
+.hint {
+  margin: 14px 0 0;
+  border: 1px solid var(--soft-line);
+  background: #fbfdff;
+  color: var(--muted);
+}
+
+.hint.good {
+  border-color: #bde8df;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.error-message,
+.error-banner {
+  border: 1px solid #ffd4c7;
+  background: #fff7f4;
+  color: #bf3d1f;
+}
+
+.error-message {
+  margin: 12px 0 0;
+}
+
+.error-banner {
+  margin-bottom: 18px;
+}
+
+.start-ai-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.start-ai-notes span {
+  border: 1px solid #dbe8f7;
+  border-radius: 999px;
+  background: #fbfdff;
+  padding: 7px 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.start-ai-notes span::before {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 999px;
+  background: var(--green);
+  content: "";
+  vertical-align: 1px;
+}
+
+.start-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
 }
 
 .featured-starts {
@@ -1857,6 +2185,31 @@ h3 {
   font-size: 28px;
 }
 
+.detail-award {
+  max-width: 680px;
+  margin: 14px 0 0;
+  border: 1px solid #bde8df;
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(233, 247, 244, 0.84)),
+    linear-gradient(90deg, rgba(15, 143, 122, 0.08), rgba(244, 184, 63, 0.08));
+  padding: 14px 16px;
+}
+
+.detail-award strong {
+  display: block;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.detail-award p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
@@ -2059,6 +2412,17 @@ h3 {
   40% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 1100px) {
   .topbar {
     grid-template-columns: 1fr;
@@ -2095,13 +2459,29 @@ h3 {
 
   .shelf-grid,
   .feature-grid,
+  .start-methods-grid,
   .featured-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .flow-grid,
+  .journey-steps,
   .route-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .journey-step {
+    align-items: start;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .journey-line {
+    display: none;
+  }
+
+  .journey-step p {
+    margin: 0;
   }
 }
 
@@ -2146,7 +2526,9 @@ h3 {
 
   .shelf-grid,
   .feature-grid,
+  .start-methods-grid,
   .flow-grid,
+  .journey-steps,
   .route-strip,
   .chapter-direction-list,
   .empty-state,
@@ -2154,6 +2536,22 @@ h3 {
   .author-list,
   .input-row {
     grid-template-columns: 1fr;
+  }
+
+  .how-to-start,
+  .landing-flow {
+    padding: 22px;
+  }
+
+  .journey-step {
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: start;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .journey-step .step-number {
+    grid-row: span 2;
   }
   .featured-grid {
     display: flex;
@@ -2393,9 +2791,11 @@ h3 {
   font-weight: 900;
 }
 
-.card-query::before {
-  content: "🔍";
-  font-size: 11px;
+.card-meta {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--soft-line);
+  padding-top: 12px;
 }
 
 .knowledge-card .selected-badge {
@@ -2432,6 +2832,22 @@ h3 {
   box-shadow: 0 -10px 30px rgba(17, 49, 96, 0.08);
 }
 
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: min(980px, 100%);
+}
+
+.footer-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.55;
+}
+
 .start-result-footer button {
   padding: 0 28px;
   font-size: 16px;
@@ -2465,8 +2881,25 @@ h3 {
     padding: 12px 16px;
   }
 
+  .footer-content {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
   .start-result-footer button {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }
 </style>
@@ -3449,6 +3882,11 @@ function detectStartInput(input, text, mode = 'auto') {
     return { ok: false, label: "请粘贴至少 20 字的正文片段。" };
   }
 
+  if (mode === 'paramText') {
+    if (trimmedText.length > 0) return { ok: true, label: "外部带入文本", mode: "text" };
+    return { ok: false, label: "URL 参数中没有可读取的文本内容。" };
+  }
+
   if (zhihuType) return { ok: true, label: zhihuType, mode: "zhihu" };
 
   if (trimmedInput) {
@@ -3528,8 +3966,13 @@ function update(partial) {
   }
   render();
   if ((partial.view && partial.view !== previousView) || Object.prototype.hasOwnProperty.call(partial, "currentIndex")) {
-    window.scrollTo({ top: 0, left: 0 });
+    scrollToTop();
   }
+}
+
+function scrollToTop() {
+  if (navigator.userAgent.includes("jsdom")) return;
+  window.scrollTo({ top: 0, left: 0 });
 }
 
 function navigate(view) {
@@ -3706,7 +4149,7 @@ async function goNext() {
       error: "",
     });
     render();
-    window.scrollTo({ top: 0, left: 0 });
+    scrollToTop();
 
     if (nextRoute.length < 10 && !data.directions?.length) {
       setBusy("正在想下一章可以往哪里走...");
@@ -3869,51 +4312,36 @@ function renderLanding() {
       </div>
 
       <section class="section-block how-to-start">
-        <style>
-          .how-to-start { background: #f8fafc; border-radius: 1rem; padding: 2.5rem 2rem; }
-          .start-methods-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 1.5rem; }
-          .start-method-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.875rem; padding: 1.5rem; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; }
-          .start-method-card:hover { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,0.08); transform: translateY(-2px); }
-          .method-icon { font-size: 1.75rem; margin-bottom: 0.75rem; line-height: 1; }
-          .start-method-card strong { display: block; font-size: 1.0625rem; color: #0f172a; margin-bottom: 0.375rem; }
-          .start-method-card p { font-size: 0.875rem; color: #64748b; line-height: 1.6; margin: 0 0 1rem; flex: 1; }
-          .start-method-card .method-action { margin-top: auto; }
-          .start-method-card button { width: 100%; }
-          .bookmarklet-mini { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-          .bookmarklet-mini .bookmarklet-link { display: inline-block; padding: 0.5rem 1rem; background: #2563eb; color: #fff; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; text-decoration: none; cursor: move; box-shadow: 0 2px 6px rgba(37,99,235,0.2); transition: transform 0.15s; }
-          .bookmarklet-mini .bookmarklet-link:hover { transform: translateY(-1px); }
-          .bookmarklet-mini .bookmarklet-hint { color: #94a3b8; font-size: 0.75rem; }
-          @media (max-width: 768px) { .start-methods-grid { grid-template-columns: 1fr; } }
-        </style>
         <div class="section-heading">
           <p class="eyebrow">随时开始</p>
-          <h2>三种方式开始</h2>
+          <h2>选一种顺手的方式开始</h2>
+          <p class="section-intro">不用先想清楚整本书。把一个问题、一段文字或当前正在看的网页交给非书，它会帮你整理出第一批可探索的切口。</p>
         </div>
         <div class="start-methods-grid">
           <article class="start-method-card">
-            <div class="method-icon">📝</div>
+            <div class="method-icon">01</div>
             <strong>粘贴链接或文本</strong>
             <p>输入任意文章链接，或直接粘贴标题、摘要和正文片段。支持知乎文章、回答、问题和任意网页。</p>
             <div class="method-action">
-              <button class="ghost-button" data-view="start">去起点页 →</button>
+              <button class="ghost-button" data-view="start">去起点页</button>
             </div>
           </article>
           <article class="start-method-card">
-            <div class="method-icon">🎯</div>
-            <strong>点击精选起点</strong>
-            <p>从 6 个高质量知乎问题中一键启动。零输入、零等待，立即开始探索。</p>
+            <div class="method-icon">02</div>
+            <strong>点击知乎热榜</strong>
+            <p>从实时热榜里挑一个正在发生的话题。适合快速体验，也适合把公共讨论读出自己的线索。</p>
             <div class="method-action">
-              <button class="ghost-button" data-view="start">去起点页 →</button>
+              <button class="ghost-button" data-view="start">去起点页</button>
             </div>
           </article>
           <article class="start-method-card">
-            <div class="method-icon">🔗</div>
+            <div class="method-icon">03</div>
             <strong>Bookmarklet 书签</strong>
             <p>拖拽链接到浏览器书签栏。浏览任意网页时，一键跳转并自动带入当前页面链接。</p>
             <div class="method-action">
               <div class="bookmarklet-mini">
-                <a class="bookmarklet-link" id="bookmarklet-link" href="#">🔗 生成非书</a>
-                <span class="bookmarklet-hint">← 拖拽到书签栏</span>
+                <a class="bookmarklet-link" id="bookmarklet-link" href="#">生成非书</a>
+                <span class="bookmarklet-hint">拖到书签栏后使用</span>
               </div>
             </div>
           </article>
@@ -3921,51 +4349,37 @@ function renderLanding() {
       </section>
 
       <section class="section-block landing-flow">
-        <style>
-          .flow-steps { display: flex; align-items: flex-start; gap: 0; margin-top: 1.5rem; }
-          .flow-step { flex: 1; text-align: center; position: relative; padding: 0 0.5rem; }
-          .step-number { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; position: relative; z-index: 1; }
-          .flow-step strong { display: block; font-size: 1rem; color: #0f172a; margin-bottom: 0.375rem; }
-          .flow-step p { font-size: 0.875rem; color: #64748b; line-height: 1.6; margin: 0; }
-          .step-line { position: absolute; top: 1.25rem; left: calc(50% + 1.5rem); right: calc(-50% + 1.5rem); height: 2px; background: #e2e8f0; z-index: 0; }
-          .flow-step:last-child .step-line { display: none; }
-          @media (max-width: 640px) {
-            .flow-steps { flex-direction: column; gap: 1.5rem; }
-            .step-line { display: none; }
-            .flow-step { text-align: left; display: flex; gap: 1rem; align-items: flex-start; padding: 0; }
-            .step-number { flex-shrink: 0; margin-bottom: 0; }
-          }
-        </style>
         <div class="section-heading">
           <p class="eyebrow">探索流程</p>
           <h2>从一次好奇，到一本可分享的非书</h2>
+          <p class="section-intro">每一步都保留人的选择：AI 负责提炼和推荐，你负责决定这本书往哪里走。</p>
         </div>
-        <div class="flow-steps">
-          <div class="flow-step">
-            <div class="step-line"></div>
+        <div class="journey-steps">
+          <div class="journey-step">
+            <div class="journey-line"></div>
             <div class="step-number">1</div>
             <div>
               <strong>放进第一篇文章</strong>
               <p>粘贴链接或正文，这就是你非书的第 1 章。</p>
             </div>
           </div>
-          <div class="flow-step">
-            <div class="step-line"></div>
+          <div class="journey-step">
+            <div class="journey-line"></div>
             <div class="step-number">2</div>
             <div>
               <strong>选择下一章方向</strong>
-              <p>深入、换个角度、或是意外发现——下一章往哪里走，你决定。</p>
+              <p>深入、换个角度、或是意外发现，下一章往哪里走由你决定。</p>
             </div>
           </div>
-          <div class="flow-step">
-            <div class="step-line"></div>
+          <div class="journey-step">
+            <div class="journey-line"></div>
             <div class="step-number">3</div>
             <div>
               <strong>挑选下一章</strong>
               <p>从三篇文章里选一章加入你的非书，看看它如何接上前文。</p>
             </div>
           </div>
-          <div class="flow-step">
+          <div class="journey-step">
             <div class="step-number">4</div>
             <div>
               <strong>装订成书</strong>
@@ -4063,7 +4477,7 @@ function renderStart() {
           </button>
         </div>
         ${state.hotListError ? `<div class="hotlist-error">${state.hotListError}</div>` : ""}
-        <p class="scroll-hint">← 左右滑动查看更多 →</p>
+        <p class="scroll-hint">左右滑动查看更多</p>
         <div class="featured-grid">
           ${state.hotList.map((item, index) => `
             <button class="featured-card" type="button" data-hot-index="${index}">
@@ -4072,7 +4486,7 @@ function renderStart() {
               <p>${item.excerpt}</p>
               <div class="featured-card-action">
                 <span>AI 提炼知识卡片</span>
-                <span>→</span>
+                <span class="action-mark">开始</span>
               </div>
             </button>
           `).join("")}
@@ -4087,7 +4501,7 @@ function renderStart() {
         <div class="link-input-block">
           <label for="url-input">文章或问题链接</label>
           <div class="input-row url-input-row">
-            <span class="input-icon">🔗</span>
+            <span class="input-icon">链</span>
             <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意网页链接" />
             <button type="button" id="url-submit">开始理解</button>
           </div>
@@ -4157,14 +4571,18 @@ function renderStartResult() {
       <div class="knowledge-cards">
         ${cards.map((card, index) => `
           <article class="knowledge-card ${selected?.concept === card.concept ? 'selected' : ''}" data-index="${index}">
-            <span class="card-index">${index + 1}</span>
-            <h3>${escapeHtml(card.title)}</h3>
+            <div class="card-header">
+              <span class="card-index">${index + 1}</span>
+              <span class="selected-badge">已选择</span>
+            </div>
+            <h3 class="card-title">${escapeHtml(card.title)}</h3>
             <span class="card-concept">${escapeHtml(card.concept)}</span>
             <p class="card-summary">${escapeHtml(card.summary)}</p>
             <div class="card-meta">
-              <p class="card-reason"><strong>提取理由：</strong>${escapeHtml(card.extractionReason)}</p>
-              <p class="card-value"><strong>探索价值：</strong>${escapeHtml(card.explorationValue)}</p>
+              <p class="card-reason">${escapeHtml(card.extractionReason)}</p>
+              <p class="card-value">${escapeHtml(card.explorationValue)}</p>
             </div>
+            ${card.suggestedQuery ? `<span class="card-query">搜索关键词：${escapeHtml(card.suggestedQuery)}</span>` : ""}
           </article>
         `).join("")}
       </div>
@@ -4563,6 +4981,10 @@ function renderBook(book = state.activeBook || sampleBook()) {
             <span><strong>${conceptCount(book)}</strong>个概念</span>
             <span>可阅读原文</span>
           </div>
+          <div class="detail-award">
+            <strong>你完成了一条自己的阅读线索</strong>
+            <p>这些章节不是被动刷到的内容，而是你一步步选择出来的知识路径。</p>
+          </div>
           <div class="hero-actions">
             <button id="restart-button">再读一本</button>
             <button class="ghost-button" disabled>分享（即将上线）</button>
@@ -4728,7 +5150,7 @@ function handleUrlParams() {
   }
   if (textParam) {
     state.articleText = textParam;
-    startAdventure();
+    startAdventure(null, null, "paramText");
     return true;
   }
   return false;

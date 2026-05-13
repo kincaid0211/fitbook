@@ -487,6 +487,11 @@ function detectStartInput(input, text, mode = 'auto') {
     return { ok: false, label: "请粘贴至少 20 字的正文片段。" };
   }
 
+  if (mode === 'paramText') {
+    if (trimmedText.length > 0) return { ok: true, label: "外部带入文本", mode: "text" };
+    return { ok: false, label: "URL 参数中没有可读取的文本内容。" };
+  }
+
   if (zhihuType) return { ok: true, label: zhihuType, mode: "zhihu" };
 
   if (trimmedInput) {
@@ -566,8 +571,13 @@ function update(partial) {
   }
   render();
   if ((partial.view && partial.view !== previousView) || Object.prototype.hasOwnProperty.call(partial, "currentIndex")) {
-    window.scrollTo({ top: 0, left: 0 });
+    scrollToTop();
   }
+}
+
+function scrollToTop() {
+  if (navigator.userAgent.includes("jsdom")) return;
+  window.scrollTo({ top: 0, left: 0 });
 }
 
 function navigate(view) {
@@ -744,7 +754,7 @@ async function goNext() {
       error: "",
     });
     render();
-    window.scrollTo({ top: 0, left: 0 });
+    scrollToTop();
 
     if (nextRoute.length < 10 && !data.directions?.length) {
       setBusy("正在想下一章可以往哪里走...");
@@ -907,51 +917,36 @@ function renderLanding() {
       </div>
 
       <section class="section-block how-to-start">
-        <style>
-          .how-to-start { background: #f8fafc; border-radius: 1rem; padding: 2.5rem 2rem; }
-          .start-methods-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 1.5rem; }
-          .start-method-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.875rem; padding: 1.5rem; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; }
-          .start-method-card:hover { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,0.08); transform: translateY(-2px); }
-          .method-icon { font-size: 1.75rem; margin-bottom: 0.75rem; line-height: 1; }
-          .start-method-card strong { display: block; font-size: 1.0625rem; color: #0f172a; margin-bottom: 0.375rem; }
-          .start-method-card p { font-size: 0.875rem; color: #64748b; line-height: 1.6; margin: 0 0 1rem; flex: 1; }
-          .start-method-card .method-action { margin-top: auto; }
-          .start-method-card button { width: 100%; }
-          .bookmarklet-mini { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-          .bookmarklet-mini .bookmarklet-link { display: inline-block; padding: 0.5rem 1rem; background: #2563eb; color: #fff; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; text-decoration: none; cursor: move; box-shadow: 0 2px 6px rgba(37,99,235,0.2); transition: transform 0.15s; }
-          .bookmarklet-mini .bookmarklet-link:hover { transform: translateY(-1px); }
-          .bookmarklet-mini .bookmarklet-hint { color: #94a3b8; font-size: 0.75rem; }
-          @media (max-width: 768px) { .start-methods-grid { grid-template-columns: 1fr; } }
-        </style>
         <div class="section-heading">
           <p class="eyebrow">随时开始</p>
-          <h2>三种方式开始</h2>
+          <h2>选一种顺手的方式开始</h2>
+          <p class="section-intro">不用先想清楚整本书。把一个问题、一段文字或当前正在看的网页交给非书，它会帮你整理出第一批可探索的切口。</p>
         </div>
         <div class="start-methods-grid">
           <article class="start-method-card">
-            <div class="method-icon">📝</div>
+            <div class="method-icon">01</div>
             <strong>粘贴链接或文本</strong>
             <p>输入任意文章链接，或直接粘贴标题、摘要和正文片段。支持知乎文章、回答、问题和任意网页。</p>
             <div class="method-action">
-              <button class="ghost-button" data-view="start">去起点页 →</button>
+              <button class="ghost-button" data-view="start">去起点页</button>
             </div>
           </article>
           <article class="start-method-card">
-            <div class="method-icon">🎯</div>
-            <strong>点击精选起点</strong>
-            <p>从 6 个高质量知乎问题中一键启动。零输入、零等待，立即开始探索。</p>
+            <div class="method-icon">02</div>
+            <strong>点击知乎热榜</strong>
+            <p>从实时热榜里挑一个正在发生的话题。适合快速体验，也适合把公共讨论读出自己的线索。</p>
             <div class="method-action">
-              <button class="ghost-button" data-view="start">去起点页 →</button>
+              <button class="ghost-button" data-view="start">去起点页</button>
             </div>
           </article>
           <article class="start-method-card">
-            <div class="method-icon">🔗</div>
+            <div class="method-icon">03</div>
             <strong>Bookmarklet 书签</strong>
             <p>拖拽链接到浏览器书签栏。浏览任意网页时，一键跳转并自动带入当前页面链接。</p>
             <div class="method-action">
               <div class="bookmarklet-mini">
-                <a class="bookmarklet-link" id="bookmarklet-link" href="#">🔗 生成非书</a>
-                <span class="bookmarklet-hint">← 拖拽到书签栏</span>
+                <a class="bookmarklet-link" id="bookmarklet-link" href="#">生成非书</a>
+                <span class="bookmarklet-hint">拖到书签栏后使用</span>
               </div>
             </div>
           </article>
@@ -959,51 +954,37 @@ function renderLanding() {
       </section>
 
       <section class="section-block landing-flow">
-        <style>
-          .flow-steps { display: flex; align-items: flex-start; gap: 0; margin-top: 1.5rem; }
-          .flow-step { flex: 1; text-align: center; position: relative; padding: 0 0.5rem; }
-          .step-number { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; position: relative; z-index: 1; }
-          .flow-step strong { display: block; font-size: 1rem; color: #0f172a; margin-bottom: 0.375rem; }
-          .flow-step p { font-size: 0.875rem; color: #64748b; line-height: 1.6; margin: 0; }
-          .step-line { position: absolute; top: 1.25rem; left: calc(50% + 1.5rem); right: calc(-50% + 1.5rem); height: 2px; background: #e2e8f0; z-index: 0; }
-          .flow-step:last-child .step-line { display: none; }
-          @media (max-width: 640px) {
-            .flow-steps { flex-direction: column; gap: 1.5rem; }
-            .step-line { display: none; }
-            .flow-step { text-align: left; display: flex; gap: 1rem; align-items: flex-start; padding: 0; }
-            .step-number { flex-shrink: 0; margin-bottom: 0; }
-          }
-        </style>
         <div class="section-heading">
           <p class="eyebrow">探索流程</p>
           <h2>从一次好奇，到一本可分享的非书</h2>
+          <p class="section-intro">每一步都保留人的选择：AI 负责提炼和推荐，你负责决定这本书往哪里走。</p>
         </div>
-        <div class="flow-steps">
-          <div class="flow-step">
-            <div class="step-line"></div>
+        <div class="journey-steps">
+          <div class="journey-step">
+            <div class="journey-line"></div>
             <div class="step-number">1</div>
             <div>
               <strong>放进第一篇文章</strong>
               <p>粘贴链接或正文，这就是你非书的第 1 章。</p>
             </div>
           </div>
-          <div class="flow-step">
-            <div class="step-line"></div>
+          <div class="journey-step">
+            <div class="journey-line"></div>
             <div class="step-number">2</div>
             <div>
               <strong>选择下一章方向</strong>
-              <p>深入、换个角度、或是意外发现——下一章往哪里走，你决定。</p>
+              <p>深入、换个角度、或是意外发现，下一章往哪里走由你决定。</p>
             </div>
           </div>
-          <div class="flow-step">
-            <div class="step-line"></div>
+          <div class="journey-step">
+            <div class="journey-line"></div>
             <div class="step-number">3</div>
             <div>
               <strong>挑选下一章</strong>
               <p>从三篇文章里选一章加入你的非书，看看它如何接上前文。</p>
             </div>
           </div>
-          <div class="flow-step">
+          <div class="journey-step">
             <div class="step-number">4</div>
             <div>
               <strong>装订成书</strong>
@@ -1101,7 +1082,7 @@ function renderStart() {
           </button>
         </div>
         ${state.hotListError ? `<div class="hotlist-error">${state.hotListError}</div>` : ""}
-        <p class="scroll-hint">← 左右滑动查看更多 →</p>
+        <p class="scroll-hint">左右滑动查看更多</p>
         <div class="featured-grid">
           ${state.hotList.map((item, index) => `
             <button class="featured-card" type="button" data-hot-index="${index}">
@@ -1110,7 +1091,7 @@ function renderStart() {
               <p>${item.excerpt}</p>
               <div class="featured-card-action">
                 <span>AI 提炼知识卡片</span>
-                <span>→</span>
+                <span class="action-mark">开始</span>
               </div>
             </button>
           `).join("")}
@@ -1125,7 +1106,7 @@ function renderStart() {
         <div class="link-input-block">
           <label for="url-input">文章或问题链接</label>
           <div class="input-row url-input-row">
-            <span class="input-icon">🔗</span>
+            <span class="input-icon">链</span>
             <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意网页链接" />
             <button type="button" id="url-submit">开始理解</button>
           </div>
@@ -1195,14 +1176,18 @@ function renderStartResult() {
       <div class="knowledge-cards">
         ${cards.map((card, index) => `
           <article class="knowledge-card ${selected?.concept === card.concept ? 'selected' : ''}" data-index="${index}">
-            <span class="card-index">${index + 1}</span>
-            <h3>${escapeHtml(card.title)}</h3>
+            <div class="card-header">
+              <span class="card-index">${index + 1}</span>
+              <span class="selected-badge">已选择</span>
+            </div>
+            <h3 class="card-title">${escapeHtml(card.title)}</h3>
             <span class="card-concept">${escapeHtml(card.concept)}</span>
             <p class="card-summary">${escapeHtml(card.summary)}</p>
             <div class="card-meta">
-              <p class="card-reason"><strong>提取理由：</strong>${escapeHtml(card.extractionReason)}</p>
-              <p class="card-value"><strong>探索价值：</strong>${escapeHtml(card.explorationValue)}</p>
+              <p class="card-reason">${escapeHtml(card.extractionReason)}</p>
+              <p class="card-value">${escapeHtml(card.explorationValue)}</p>
             </div>
+            ${card.suggestedQuery ? `<span class="card-query">搜索关键词：${escapeHtml(card.suggestedQuery)}</span>` : ""}
           </article>
         `).join("")}
       </div>
@@ -1601,6 +1586,10 @@ function renderBook(book = state.activeBook || sampleBook()) {
             <span><strong>${conceptCount(book)}</strong>个概念</span>
             <span>可阅读原文</span>
           </div>
+          <div class="detail-award">
+            <strong>你完成了一条自己的阅读线索</strong>
+            <p>这些章节不是被动刷到的内容，而是你一步步选择出来的知识路径。</p>
+          </div>
           <div class="hero-actions">
             <button id="restart-button">再读一本</button>
             <button class="ghost-button" disabled>分享（即将上线）</button>
@@ -1766,7 +1755,7 @@ function handleUrlParams() {
   }
   if (textParam) {
     state.articleText = textParam;
-    startAdventure();
+    startAdventure(null, null, "paramText");
     return true;
   }
   return false;

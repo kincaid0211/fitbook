@@ -8,13 +8,13 @@
 
 Logo 已定稿并保存在 `assets/feishu-logo.png`，演示页面导航栏会使用该横版品牌标识。
 
-核心 AI 功能逻辑已整理在 [docs/AI_FUNCTION_LOGIC.md](docs/AI_FUNCTION_LOGIC.md)。主流程和 Kimi / Vercel 技术方案已整理在 [docs/TECHNICAL_PLAN.md](docs/TECHNICAL_PLAN.md)。关键页面 UI 视觉稿已整理在 [docs/UI_VISUALS.md](docs/UI_VISUALS.md)，包含落地页、我的非书和非书详情页。
+核心 AI 功能逻辑已整理在 [docs/AI_FUNCTION_LOGIC.md](docs/AI_FUNCTION_LOGIC.md)。主流程和 Kimi / Vercel 技术方案已整理在 [docs/TECHNICAL_PLAN.md](docs/TECHNICAL_PLAN.md)。关键页面 UI 视觉稿已整理在 [docs/UI_VISUALS.md](docs/UI_VISUALS.md)，包含落地页、我的非书和非书详情页。持续更新时请参考 [docs/DESIGN_GUIDE.md](docs/DESIGN_GUIDE.md) 中的设计风格、中文排版和组件规范。
 
 ## 三种启动方式
 
 1. **粘贴链接或文本**：在起点页输入任意文章链接，或直接粘贴标题、摘要和正文片段。
 2. **点击知乎热榜**：起点页底部展示 6 条实时知乎热榜内容，支持一键刷新，零输入直接启动。
-3. **Bookmarklet 书签**：在落地页拖拽「🔗 生成非书」到浏览器书签栏，浏览任意网页时点击即可一键开启探索。
+3. **Bookmarklet 书签**：在落地页拖拽「生成非书」到浏览器书签栏，浏览任意网页时点击即可一键开启探索。
 
 此外，支持通过 URL 参数直接启动：`https://your-domain/?url=文章链接` 或 `?text=文本内容`。
 

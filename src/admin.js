@@ -192,7 +192,7 @@ function nodeCard(key, node) {
         </div>
         <div class="node-meta">
           <span class="soft-note">${node.provider} · ${node.model}</span>
-          <span class="toggle-icon">${isExpanded ? "▲" : "▼"}</span>
+          <span class="toggle-icon">${isExpanded ? "收起" : "展开"}</span>
         </div>
       </header>
       ${isExpanded ? `
@@ -235,7 +235,7 @@ function render() {
           <p class="lead">调整不同 AI 环节的模型、温度和提示词。配置仅保存在当前浏览器，用于调试和演示。</p>
           <p class="model-status">
             <span class="status-badge ${state.modelListLoading ? "loading" : state.modelLists.siliconflow?.length ? "ok" : "warn"}">
-              ${state.modelListLoading ? "⏳" : state.modelLists.siliconflow?.length ? "✓" : "⚠"}
+              ${state.modelListLoading ? "读" : state.modelLists.siliconflow?.length ? "好" : "待"}
             </span>
             ${state.modelListStatus || "等待加载模型列表..."}
           </p>
