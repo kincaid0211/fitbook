@@ -1158,6 +1158,7 @@ function renderStart() {
       const item = state.hotList[index];
       if (item?.url) {
         state.inputUrl = item.url;
+        state.articleText = "";
         startAdventure(null, item);
       }
     });
@@ -1221,7 +1222,11 @@ function renderStartResult() {
 function confirmAnchorAndStart() {
   const data = state.startData;
   const anchor = state.selectedAnchor;
-  if (!data || !anchor) return;
+  if (!data || !anchor) {
+    state.error = "选择状态已丢失，请刷新页面后重试。";
+    render();
+    return;
+  }
 
   const step = firstStepFromStart(data);
   step.title = anchor.title;
@@ -1561,7 +1566,14 @@ function renderAdventure() {
 }
 
 function renderBook(book = state.activeBook || sampleBook()) {
-  const authors = uniqueAuthors(book.steps);
+  const rawAuthors = uniqueAuthors(book.steps);
+  const authors = rawAuthors.filter(
+    (name) => name && name !== "未知" && name !== "user_text"
+  );
+  const cleanedAuthorCount = authors.length || authorCount(book);
+  const displayAuthors = authors.length ? authors : rawAuthors.filter((name) => name && name !== "user_text");
+  const finalAuthorCount = displayAuthors.length || cleanedAuthorCount;
+
   app.innerHTML = `
     <section class="screen book-screen">
       ${nav("library")}
@@ -1574,12 +1586,11 @@ function renderBook(book = state.activeBook || sampleBook()) {
           <p class="eyebrow">已保存到我的非书</p>
           <h1>${book.title}</h1>
           <p class="lead">${book.subtitle}</p>
-          <div class="tag-row">${book.tags.map((tag) => `<span>${tag}</span>`).join("")}</div>
+          <div class="tag-row">${book.tags.slice(0, 3).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
           <div class="detail-stats">
-            <span><strong>${book.steps.length}</strong>章</span>
-            <span><strong>${authorCount(book)}</strong>位作者</span>
-            <span><strong>${conceptCount(book)}</strong>个概念</span>
-            <span>可阅读原文</span>
+            <div class="stat-item"><strong>${book.steps.length}</strong><span>章</span></div>
+            <div class="stat-item"><strong>${finalAuthorCount}</strong><span>位作者</span></div>
+            <div class="stat-item"><strong>${book.tags.length}</strong><span>个主题</span></div>
           </div>
           <div class="detail-award">
             <strong>你完成了一条自己的阅读线索</strong>
@@ -1592,79 +1603,61 @@ function renderBook(book = state.activeBook || sampleBook()) {
         </div>
       </header>
 
-      <section class="detail-grid">
+      <section class="book-detail-body">
         <article class="preface">
           <h2>序言</h2>
           <p>${book.preface}</p>
         </article>
-        <article class="cover-concept-panel">
-          <h2>封面</h2>
-          <p>${book.coverConcept || "这是根据你阅读的主题自动设计的封面概念。正式封面生成即将上线。"}</p>
-          <div class="tag-row compact"><span>自动封面概念</span><span>可生成图片</span><span>适合分享</span></div>
-        </article>
+
         <article class="toc">
           <div class="section-heading row compact-heading">
             <h2>目录</h2>
-            <span class="soft-note">查看全部 ${book.steps.length} 章</span>
           </div>
           <div class="chapter-list">
             ${book.steps
-              .slice(0, 6)
               .map(
                 (step, index) => `
-                  <div class="chapter-row">
-                    <span class="chapter-index">${index + 1}</span>
-                    <div class="chapter-row-main">
-                      <strong>${step.url && step.url !== "#" ? `<a class="chapter-title-link" href="${escapeHtml(step.url)}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(step.title)}</span><em>读原文</em></a>` : escapeHtml(step.title)}</strong>
-                      <small>${step.author} · 原文入口与摘要导读</small>
+                  <div class="chapter-card">
+                    <div class="chapter-card-header">
+                      <span class="chapter-index">${index + 1}</span>
+                      <div class="chapter-card-main">
+                        ${step.url && step.url !== "#"
+                          ? `<a class="chapter-title-link" href="${escapeHtml(step.url)}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(step.title)}</span><em>读原文</em></a>`
+                          : `<strong>${escapeHtml(step.title)}</strong>`}
+                        <small>${step.author && step.author !== "未知" && step.author !== "user_text" ? escapeHtml(step.author) + " · " : ""}原文入口与摘要导读</small>
+                      </div>
                     </div>
-                    <div class="tag-row compact">${step.concepts.slice(0, 2).map((tag) => `<span>${tag}</span>`).join("")}</div>
+                    ${step.concepts && step.concepts.length
+                      ? `<div class="tag-row compact">${step.concepts.slice(0, 2).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>`
+                      : ""}
                   </div>
                 `,
               )
               .join("")}
           </div>
         </article>
-        <article class="authors-panel">
-          <h2>来源与作者</h2>
-          <p>这本书由 ${authorCount(book)} 位作者的知乎内容共同构成。点击任意章节即可阅读原文。</p>
-          <div class="author-list">
-            ${authors
-              .slice(0, 8)
-              .map((name, index) => {
-                const profile = authorProfiles.find((author) => author.name === name) || authorProfiles[index % authorProfiles.length];
-                return `
-                  <div class="author-item">
-                    <span>${profile.avatar}</span>
-                    <div><strong>${name}</strong><small>贡献 ${index < 3 ? 2 : 1} 章</small></div>
-                  </div>
-                `;
-              })
-              .join("")}
+
+        <section class="detail-footer">
+          <div class="authors-line">
+            <span class="authors-label">来源与作者</span>
+            <span class="authors-names">${displayAuthors.length ? displayAuthors.map(escapeHtml).join("、") : "多位知乎作者"}</span>
+            <span class="authors-count">共 ${finalAuthorCount} 位</span>
           </div>
-        </article>
-        <aside class="route-timeline">
-          <h2>你的章节线索</h2>
-          ${book.steps
-            .map(
-              (step, index) => `
-                <div class="timeline-item">
-                  <span>${index + 1}</span>
-                  <p>${step.title}</p>
-                </div>
-              `,
-            )
-            .join("")}
-          <button class="ghost-button">查看完整路线（即将上线）</button>
-        </aside>
+          <div class="hero-actions centered">
+            <button class="restart-bottom">再读一本</button>
+            <button class="ghost-button" disabled>分享（即将上线）</button>
+          </div>
+        </section>
       </section>
     </section>
   `;
   bindNav();
-  document.querySelector("#restart-button").addEventListener("click", () => {
+  const restartHandler = () => {
     if (isBusy()) return;
     restart();
-  });
+  };
+  document.querySelector("#restart-button")?.addEventListener("click", restartHandler);
+  document.querySelector(".restart-bottom")?.addEventListener("click", restartHandler);
 }
 
 function renderLibrary() {
