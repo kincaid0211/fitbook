@@ -68,6 +68,9 @@ const state = {
   hotListLoading: false,
   hotListError: "",
   hotListLoaded: false,
+  startData: null,
+  knowledgeCards: [],
+  selectedAnchor: null,
 };
 
 const authorProfiles = [
@@ -165,6 +168,15 @@ const thinkingQuotes = {
   book: ["正在为你的非书挑选最合适的封面风格…", "序言正在由 AI 作家亲笔撰写…", "每一本非书都是独一无二的，你的也是…", "正在把章节按照阅读线索重新排序…"],
   cover: ["正在把阅读的主题翻译成视觉语言…", "配色方案正在调色盘上旋转…", "一本好书的封面，是它第一次对你说话…", "正在构思一个能代表你阅读品味的画面…"],
 };
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function uniqueAuthors(steps) {
   return [...new Set(steps.map((step) => step.author))];
@@ -544,9 +556,28 @@ async function startAdventure(event, hotItem = null) {
         title: hotItem.title,
         excerpt: hotItem.excerpt,
         tag: hotItem.tag,
+        url: hotItem.url,
+        thumbnailUrl: hotItem.thumbnailUrl,
       };
+      if (hotItem.excerpt && hotItem.excerpt.length >= 20) {
+        payload.text = hotItem.excerpt;
+      }
     }
     const data = await apiPost("/api/start", payload);
+
+    if (!state.useDemo && Array.isArray(data.knowledgeCards) && data.knowledgeCards.length > 0) {
+      update({
+        startData: data,
+        knowledgeCards: data.knowledgeCards,
+        selectedAnchor: null,
+        view: "start-result",
+        loading: "",
+        loadingStartedAt: null,
+        error: "",
+      });
+      return;
+    }
+
     const step = firstStepFromStart(data);
     step.directions = data.directions || [];
     Object.assign(state, {
@@ -715,6 +746,9 @@ function restart() {
     error: "",
     finished: false,
     activeBook: null,
+    startData: null,
+    knowledgeCards: [],
+    selectedAnchor: null,
   });
 }
 
@@ -957,7 +991,7 @@ function renderLanding() {
       <section class="section-block sample-shelf">
         <div class="section-heading row">
           <div>
-            <p class="eyebrow">示例非书</p>
+            <p class="eyebrow">示例</p>
             <h2>看看别人读出了什么</h2>
           </div>
           <button class="ghost-button" id="sample-library">去书架看看</button>
@@ -1085,6 +1119,97 @@ function renderStart() {
         startAdventure(null, item);
       }
     });
+  });
+}
+
+function renderStartResult() {
+  const cards = state.knowledgeCards || [];
+  const selected = state.selectedAnchor;
+
+  app.innerHTML = `
+    <section class="screen start-result-screen">
+      ${nav("start")}
+      <header class="page-heading">
+        <p class="eyebrow">起点理解</p>
+        <h1>从起点中提炼的知识卡片</h1>
+        <p class="lead">AI 从起点中提炼了 ${cards.length} 个值得深入探索的知识切入点。选择一张作为整本非书的锚点，后续章节将围绕它展开。</p>
+      </header>
+
+      <div class="knowledge-cards">
+        ${cards.map((card, index) => `
+          <article class="knowledge-card ${selected?.concept === card.concept ? 'selected' : ''}" data-index="${index}">
+            <span class="card-index">${index + 1}</span>
+            <h3>${escapeHtml(card.title)}</h3>
+            <span class="card-concept">${escapeHtml(card.concept)}</span>
+            <p class="card-summary">${escapeHtml(card.summary)}</p>
+            <div class="card-meta">
+              <p class="card-reason"><strong>提取理由：</strong>${escapeHtml(card.extractionReason)}</p>
+              <p class="card-value"><strong>探索价值：</strong>${escapeHtml(card.explorationValue)}</p>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+
+      <div class="start-result-footer">
+        <div class="footer-content">
+          <p class="footer-hint">${selected ? `已选择：${escapeHtml(selected.title)}` : "请选择一个锚点以继续"}</p>
+          <button id="confirm-anchor" type="button" ${selected ? "" : "disabled"}>以此为锚点，开始探索</button>
+        </div>
+      </div>
+    </section>
+  `;
+
+  bindNav();
+  document.querySelectorAll(".knowledge-card").forEach((cardEl) => {
+    cardEl.addEventListener("click", () => {
+      const index = Number(cardEl.dataset.index);
+      update({ selectedAnchor: cards[index] });
+    });
+  });
+  document.querySelector("#confirm-anchor")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    confirmAnchorAndStart();
+  });
+}
+
+function confirmAnchorAndStart() {
+  const data = state.startData;
+  const anchor = state.selectedAnchor;
+  if (!data || !anchor) return;
+
+  const step = firstStepFromStart(data);
+  step.title = anchor.title;
+  step.concepts = [anchor.concept, ...(data.understanding?.concepts || [])].slice(0, 6);
+  step.curatorNote = `起点锚点：${anchor.concept}。${data.curatorMessage || ""}`;
+  step.bridge = `这是这本非书的起点锚点。你选择从「${anchor.concept}」出发，后续章节将围绕这个方向展开。`;
+  step.directions = data.directions || [];
+
+  if (step.directions.length > 0 && anchor.suggestedQuery) {
+    step.directions = step.directions.map((dir, idx) => {
+      if (idx === 0) {
+        return { ...dir, zhihuQuery: anchor.suggestedQuery.slice(0, 14) };
+      }
+      return dir;
+    });
+  }
+
+  update({
+    view: "adventure",
+    currentIndex: 0,
+    route: [step],
+    selectedDirection: null,
+    selectedCandidate: null,
+    candidates: [],
+    interestProfile: data.interestProfile || {},
+    finished: false,
+    activeBook: null,
+    useDemo: false,
+    startData: null,
+    knowledgeCards: [],
+    selectedAnchor: null,
+    loading: "",
+    loadingStartedAt: null,
+    error: "",
   });
 }
 
@@ -1267,7 +1392,7 @@ function renderAdventure() {
                 <p>${step.summary}</p>
               </div>
               <div class="chapter-insight">
-                <strong>与上一章的连接</strong>
+                <strong>${state.currentIndex === 0 ? "起点锚点" : "与上一章的连接"}</strong>
                 <p>${step.bridge || "这是这本非书的起点，它会决定后续章节如何展开。"}</p>
               </div>
               <div class="chapter-insight">
@@ -1527,6 +1652,7 @@ function render() {
   if (!state.loading && thinkingModalEl) { hideThinkingModal(); }
   if (state.view === "landing") renderLanding();
   else if (state.view === "start") renderStart();
+  else if (state.view === "start-result") renderStartResult();
   else if (state.view === "library") renderLibrary();
   else if (state.view === "book") renderBook();
   else renderAdventure();

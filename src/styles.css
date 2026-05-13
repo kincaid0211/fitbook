@@ -1881,3 +1881,220 @@ textarea:focus {
     width: 100%;
   }
 }
+
+/* ===== 起点知识卡片（Start Knowledge Cards）===== */
+.start-result-screen {
+  padding: 46px 0 120px;
+}
+
+.start-result-header {
+  max-width: 820px;
+  margin-bottom: 28px;
+}
+
+.start-result-header h2 {
+  margin-bottom: 10px;
+  font-size: clamp(28px, 3.6vw, 42px);
+}
+
+.start-result-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.knowledge-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 18px;
+}
+
+.knowledge-card {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 22px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+  box-shadow: 0 10px 28px rgba(20, 67, 128, 0.06);
+}
+
+.knowledge-card:hover {
+  border-color: #9bc5ff;
+  box-shadow: 0 18px 44px rgba(0, 102, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.knowledge-card.selected {
+  border-color: var(--blue);
+  background: linear-gradient(160deg, #ffffff, #f0f7ff);
+  box-shadow: 0 18px 44px rgba(0, 102, 255, 0.14);
+}
+
+.knowledge-card .card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-index {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.knowledge-card.selected .card-index {
+  background: var(--blue);
+  color: #fff;
+}
+
+.card-concept {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #f3f8ff;
+  padding: 5px 10px;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.knowledge-card .card-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.card-summary {
+  margin: 0;
+  color: #2d3b56;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.card-reason,
+.card-value {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.card-reason::before {
+  content: "提取理由：";
+  color: var(--subtle);
+  font-weight: 800;
+}
+
+.card-value::before {
+  content: "探索价值：";
+  color: var(--subtle);
+  font-weight: 800;
+}
+
+.card-query {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: #f3f8ff;
+  padding: 5px 10px;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.card-query::before {
+  content: "🔍";
+  font-size: 11px;
+}
+
+.knowledge-card .selected-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: none;
+  border-radius: 999px;
+  background: var(--blue);
+  padding: 5px 10px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.knowledge-card.selected .selected-badge {
+  display: inline-flex;
+}
+
+.start-result-footer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border-top: 1px solid rgba(210, 224, 244, 0.92);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 14px 22px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 -10px 30px rgba(17, 49, 96, 0.08);
+}
+
+.start-result-footer button {
+  padding: 0 28px;
+  font-size: 16px;
+}
+
+.start-result-footer .ghost-button {
+  border: 1px solid #b9d3ff;
+  background: #fff;
+  color: var(--blue);
+}
+
+.start-result-footer .ghost-button:hover {
+  background: var(--blue-soft);
+  color: var(--blue-dark);
+}
+
+@media (max-width: 1100px) {
+  .knowledge-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .knowledge-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .start-result-footer {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .start-result-footer button {
+    width: 100%;
+  }
+}

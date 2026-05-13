@@ -108,32 +108,55 @@ export default async function handler(req, res) {
       }),
     });
 
-    if (!result.data.step?.title || !result.data.bridge) {
+    const data = result.data;
+
+    // 字段缺失容错补全：AI 漏字段时用 candidate / previousStep 信息填充
+    if (!data.step) data.step = {};
+    if (!data.step.title) data.step.title = body.candidate?.title || "下一章";
+    if (!data.step.author) data.step.author = body.candidate?.author || body.candidate?.sourceLabel || "资料来源";
+    if (!data.step.url) data.step.url = body.candidate?.url || "";
+    if (!data.step.sourceType) data.step.sourceType = body.candidate?.sourceType || "external";
+    if (!data.step.summary) data.step.summary = body.candidate?.summary || "这一章提供了一个可以继续阅读的入口。";
+    if (!Array.isArray(data.step.concepts)) {
+      data.step.concepts = (body.candidate?.fitTags || body.candidate?.concepts || []).filter(Boolean).slice(0, 5);
+    }
+    if (!data.step.curatorNote) data.step.curatorNote = "这一章已经根据候选内容整理为导读式章节。";
+    if (!data.step.originalEntryLabel) {
+      data.step.originalEntryLabel = body.candidate?.sourceType === "zhihu" ? "去读原文" : "查看来源";
+    }
+    if (!data.bridge) {
+      data.bridge = `从「${body.previousStep?.title || "上一章"}」到「${data.step.title}」的知识桥。`;
+    }
+    if (!data.interestProfile) data.interestProfile = body.interestProfile || {};
+    if (!data.curatorMessage) data.curatorMessage = "这一章已收入你的非书。";
+
+    if (!isLastStep) {
+      if (!Array.isArray(data.directions) || data.directions.length < 3) {
+        data.directions = fallbackDirections(data.step);
+      }
+      if (!data.nextCuratorMessage) data.nextCuratorMessage = "你可以选择一个方向继续。";
+    }
+
+    // 最终校验：如果连 title 都没有，说明 AI 输出完全不可用，走 fallback
+    if (!data.step.title) {
       const error = new Error("AI 没有生成有效章节。");
       error.statusCode = 502;
       error.publicMessage = "章节导读生成失败，请重试。";
       throw error;
     }
 
-    if (!isLastStep && (!Array.isArray(result.data.directions) || result.data.directions.length < 3)) {
-      const error = new Error("AI 没有生成足够的下一章方向。");
-      error.statusCode = 502;
-      error.publicMessage = "下一章方向生成失败，请重试。";
-      throw error;
-    }
-
     sendJson(res, 200, {
       ok: true,
       step: {
-        ...result.data.step,
-        bridge: result.data.bridge,
-        directions: isLastStep ? [] : (result.data.directions || []),
+        ...data.step,
+        bridge: data.bridge,
+        directions: isLastStep ? [] : (data.directions || []),
       },
-      bridge: result.data.bridge,
-      directions: isLastStep ? [] : (result.data.directions || []),
-      interestProfile: result.data.interestProfile || body.interestProfile || {},
-      curatorMessage: result.data.curatorMessage || "这一章已经收入你的非书。",
-      nextCuratorMessage: isLastStep ? "" : (result.data.nextCuratorMessage || "你可以选择一个方向继续。"),
+      bridge: data.bridge,
+      directions: isLastStep ? [] : (data.directions || []),
+      interestProfile: data.interestProfile || body.interestProfile || {},
+      curatorMessage: data.curatorMessage || "这一章已经收入你的非书。",
+      nextCuratorMessage: isLastStep ? "" : (data.nextCuratorMessage || "你可以选择一个方向继续。"),
       model: result.model,
       provider: result.provider,
     });

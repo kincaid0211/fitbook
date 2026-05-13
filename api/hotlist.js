@@ -15,6 +15,7 @@ export default async function handler(req, res) {
       url: item.url || "",
       tag: "热榜",
       excerpt: item.summary || "",
+      thumbnailUrl: item.thumbnailUrl || "",
     }));
 
     sendJson(res, 200, { ok: true, items });
