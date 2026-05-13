@@ -244,6 +244,10 @@ function clearBusy() {
   state.loadingStartedAt = null;
 }
 
+function isBusy() {
+  return Boolean(state.loading || state.hotListLoading);
+}
+
 function loadingText() {
   if (!state.loading) return "";
   const seconds = state.loadingStartedAt ? Math.max(1, Math.round((Date.now() - state.loadingStartedAt) / 1000)) : 0;
@@ -429,10 +433,11 @@ function update(partial) {
 }
 
 function navigate(view) {
+  if (isBusy()) return;
   update({ view, selectedDirection: null, selectedCandidate: null, activeBook: null });
 }
 
-async function startAdventure(event) {
+async function startAdventure(event, hotItem = null) {
   event?.preventDefault();
   const detection = detectStartInput(state.inputUrl, state.articleText);
   if (!detection.ok) {
@@ -441,10 +446,18 @@ async function startAdventure(event) {
   }
   try {
     setBusy("正在读你的第一篇文章...");
-    const data = await apiPost("/api/start", {
+    const payload = {
       url: state.inputUrl,
       text: state.articleText,
-    });
+    };
+    if (hotItem) {
+      payload.hotItem = {
+        title: hotItem.title,
+        excerpt: hotItem.excerpt,
+        tag: hotItem.tag,
+      };
+    }
+    const data = await apiPost("/api/start", payload);
     const step = firstStepFromStart(data);
     step.directions = data.directions || [];
     Object.assign(state, {
@@ -469,6 +482,7 @@ async function startAdventure(event) {
 }
 
 function startDemoAdventure() {
+  if (isBusy()) return;
   update({
     view: "adventure",
     currentIndex: 0,
@@ -487,6 +501,7 @@ function startDemoAdventure() {
 }
 
 async function chooseDirection(direction) {
+  if (isBusy()) return;
   if (state.useDemo) {
     const nextStep = adventure.steps[state.currentIndex + 1];
     const candidates = candidateOptions(nextStep);
@@ -523,14 +538,17 @@ async function chooseDirection(direction) {
 }
 
 function chooseCandidate(candidate) {
+  if (isBusy()) return;
   update({ selectedCandidate: candidate });
 }
 
 function closeCandidateModal() {
+  if (isBusy()) return;
   update({ candidates: [], selectedCandidate: null, selectedDirection: null });
 }
 
 async function goNext() {
+  if (isBusy()) return;
   if (state.useDemo) {
     const nextIndex = Math.min(state.currentIndex + 1, adventure.steps.length - 1);
     update({
@@ -606,6 +624,7 @@ function goNextMockPreview() {
 }
 
 function restart() {
+  if (isBusy()) return;
   update({
     view: "start",
     currentIndex: 0,
@@ -626,6 +645,7 @@ function restart() {
 }
 
 async function finishBook() {
+  if (isBusy()) return;
   if (state.useDemo) {
     const book = saveCurrentBook();
     update({ view: "book", activeBook: book, finished: "book" });
@@ -689,20 +709,23 @@ async function finishBook() {
 function nav(active) {
   return `
     <nav class="topbar">
-      <button class="brand-button" data-view="landing" aria-label="非书首页"><img class="brand-logo" src="${logoSrc}" alt="非书" /><span>读出自己的书。</span></button>
+      <button class="brand-button" data-view="landing" aria-label="非书首页" ${isBusy() ? "disabled" : ""}><img class="brand-logo" src="${logoSrc}" alt="非书" /><span>读出自己的书。</span></button>
       <div class="nav-links">
-        <button class="${active === "landing" ? "active" : ""}" data-view="landing">首页</button>
-        <button class="${active === "start" ? "active" : ""}" data-view="start">开始探索</button>
-        <button class="${active === "library" ? "active" : ""}" data-view="library">我的非书</button>
+        <button class="${active === "landing" ? "active" : ""}" data-view="landing" ${isBusy() ? "disabled" : ""}>首页</button>
+        <button class="${active === "start" ? "active" : ""}" data-view="start" ${isBusy() ? "disabled" : ""}>开始探索</button>
+        <button class="${active === "library" ? "active" : ""}" data-view="library" ${isBusy() ? "disabled" : ""}>我的非书</button>
       </div>
-      <button class="nav-cta" data-view="start">开始第一本非书</button>
+      <button class="nav-cta" data-view="start" ${isBusy() ? "disabled" : ""}>开始第一本非书</button>
     </nav>
   `;
 }
 
 function bindNav() {
   document.querySelectorAll("[data-view]").forEach((button) => {
-    button.addEventListener("click", () => navigate(button.dataset.view));
+    button.addEventListener("click", () => {
+      if (isBusy()) return;
+      navigate(button.dataset.view);
+    });
   });
 }
 
@@ -872,9 +895,18 @@ function renderLanding() {
     </section>
   `;
   bindNav();
-  document.querySelector("#hero-start").addEventListener("click", () => navigate("start"));
-  document.querySelector("#hero-library").addEventListener("click", () => navigate("library"));
-  document.querySelector("#sample-library").addEventListener("click", () => navigate("library"));
+  document.querySelector("#hero-start").addEventListener("click", () => {
+    if (isBusy()) return;
+    navigate("start");
+  });
+  document.querySelector("#hero-library").addEventListener("click", () => {
+    if (isBusy()) return;
+    navigate("library");
+  });
+  document.querySelector("#sample-library").addEventListener("click", () => {
+    if (isBusy()) return;
+    navigate("library");
+  });
   const bookmarkletLink = document.querySelector("#bookmarklet-link");
   if (bookmarkletLink) {
     const origin = window.location.origin;
@@ -902,12 +934,12 @@ function renderStart() {
         <form class="start-panel" id="start-form">
           <label for="url-input">文章链接</label>
           <div class="input-row">
-            <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意文章链接" />
-            <button type="submit">开始读非书</button>
+            <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意文章链接" ${isBusy() ? "disabled" : ""} />
+            <button type="submit" ${isBusy() ? "disabled" : ""}>开始读非书</button>
           </div>
           <div class="paste-block">
             <label for="article-input">或者，直接粘贴正文</label>
-            <textarea id="article-input" rows="5" placeholder="粘贴标题、摘要或正文片段，也可以只放你最有感觉的一段。">${state.articleText}</textarea>
+            <textarea id="article-input" rows="5" placeholder="粘贴标题、摘要或正文片段，也可以只放你最有感觉的一段。" ${isBusy() ? "disabled" : ""}>${state.articleText}</textarea>
           </div>
           <p class="${detected.ok ? "hint good" : "hint"}">${detected.ok ? `已识别：${detected.label}` : state.selectedDirection || detected.label}</p>
           ${state.loading ? `<p class="status-message">${loadingText()}</p>` : ""}
@@ -917,7 +949,7 @@ function renderStart() {
             <span>推荐知乎优质内容</span>
             <span>三章即可成书</span>
           </div>
-          <button class="ghost-button demo-route-button" type="button" id="demo-route-button">先看一段示例旅程</button>
+          <button class="ghost-button demo-route-button" type="button" id="demo-route-button" ${isBusy() ? "disabled" : ""}>先看一段示例旅程</button>
 
           <div class="featured-starts">
             <style>
@@ -946,7 +978,7 @@ function renderStart() {
             ${state.hotListError ? `<div class="hotlist-error">${state.hotListError}</div>` : ""}
             <div class="featured-grid">
               ${state.hotList.map((item, index) => `
-                <button class="featured-card" type="button" data-hot-index="${index}">
+                <button class="featured-card" type="button" data-hot-index="${index}" ${isBusy() ? "disabled" : ""}>
                   <span class="tag">${item.tag}</span>
                   <h4>${item.title}</h4>
                   <p>${item.excerpt}</p>
@@ -972,11 +1004,12 @@ function renderStart() {
   document.querySelector("#refresh-hotlist")?.addEventListener("click", () => fetchHotList(true));
   document.querySelectorAll(".featured-card").forEach((card) => {
     card.addEventListener("click", () => {
+      if (isBusy()) return;
       const index = Number(card.dataset.hotIndex);
       const item = state.hotList[index];
       if (item?.url) {
         state.inputUrl = item.url;
-        startAdventure();
+        startAdventure(null, item);
       }
     });
   });
@@ -1055,7 +1088,7 @@ function renderCandidateModal(candidates, selectedDirectionText) {
   return `
     <div class="modal-backdrop" role="presentation">
       <section class="chapter-modal" role="dialog" aria-modal="true" aria-labelledby="chapter-modal-title">
-        <button class="modal-close" id="candidate-modal-close" type="button" aria-label="关闭选择下一章">×</button>
+        <button class="modal-close" id="candidate-modal-close" type="button" aria-label="关闭选择下一章" ${isBusy() ? "disabled" : ""}>×</button>
         <header class="chapter-modal-header">
           <div>
             <p class="eyebrow">选择下一章</p>
@@ -1067,7 +1100,7 @@ function renderCandidateModal(candidates, selectedDirectionText) {
           ${candidates
             .map(
               (candidate, index) => `
-                <button class="chapter-choice ${state.selectedCandidate?.title === candidate.title ? "selected" : ""}" type="button" data-candidate="${index}" role="radio" aria-checked="${state.selectedCandidate?.title === candidate.title}">
+                <button class="chapter-choice ${state.selectedCandidate?.title === candidate.title ? "selected" : ""}" type="button" data-candidate="${index}" role="radio" aria-checked="${state.selectedCandidate?.title === candidate.title}" ${isBusy() ? "disabled" : ""}>
                   <div class="signal-row">${candidateSignals(candidate)}</div>
                   <strong>${candidateTitle(candidate)}</strong>
                   <p><b>这一章怎么接上前文：</b>${candidate.connection || candidate.bridgePreview || "它能接住当前章节留下的问题，继续推进这本非书的阅读线索。"}</p>
@@ -1082,8 +1115,8 @@ function renderCandidateModal(candidates, selectedDirectionText) {
             .join("")}
         </div>
         <footer class="chapter-modal-actions">
-          <button class="ghost-button" id="change-direction-button" type="button">换一个方向</button>
-          <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidate ? "" : "disabled"}>确定，进入下一章</button>
+          <button class="ghost-button" id="change-direction-button" type="button" ${isBusy() ? "disabled" : ""}>换一个方向</button>
+          <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidate ? "" : "disabled"} ${isBusy() ? "disabled" : ""}>确定，进入下一章</button>
         </footer>
       </section>
     </div>
@@ -1107,8 +1140,8 @@ function renderAdventure() {
           <p class="header-subtitle">${canFinishEarly ? `这本书已经有 ${state.route.length} 章了，现在就可以装订。当然，你也可以继续读下去。` : `再读 ${3 - state.route.length} 章，就可以装订成书了。`}</p>
         </div>
         <div class="header-actions">
-          ${canFinishEarly && !state.finished ? `<button class="ghost-button" id="early-book-button">装订这本非书</button>` : ""}
-          <button class="ghost-button" id="restart-button">另起一本</button>
+          ${canFinishEarly && !state.finished ? `<button class="ghost-button" id="early-book-button" ${isBusy() ? "disabled" : ""}>装订这本非书</button>` : ""}
+          <button class="ghost-button" id="restart-button" ${isBusy() ? "disabled" : ""}>另起一本</button>
         </div>
       </header>
       ${state.loading ? `<div class="status-banner">${loadingText()}</div>` : ""}
@@ -1186,7 +1219,7 @@ function renderAdventure() {
                 ? `<div class="direction-list chapter-direction-list">${step.directions
                     .map(
                       (direction, index) => `
-                        <button class="direction ${selectedDirectionText === directionTitle(direction) || selectedDirectionText === direction.text ? "selected" : ""}" type="button" data-index="${index}">
+                        <button class="direction ${selectedDirectionText === directionTitle(direction) || selectedDirectionText === direction.text ? "selected" : ""}" type="button" data-index="${index}" ${isBusy() ? "disabled" : ""}>
                           <span>${direction.label}</span>
                           <strong>${direction.text}</strong>
                           ${direction.reason ? `<small>${direction.reason}</small>` : ""}
@@ -1199,7 +1232,7 @@ function renderAdventure() {
                   : canFinishEarly
                     ? `<div class="empty-next-step">
                         <p>这本书已经可以装订了。你也可以继续读，把它写得更厚。</p>
-                        <button id="book-button" class="primary-wide" type="button">装订这本非书</button>
+                        <button id="book-button" class="primary-wide" type="button" ${isBusy() ? "disabled" : ""}>装订这本非书</button>
                       </div>`
                     : `<div class="empty-next-step"><p>暂时没有找到方向。你可以稍后再试，或另起一本非书。</p></div>`
             }
@@ -1210,21 +1243,48 @@ function renderAdventure() {
     </section>
   `;
 
-  document.querySelector("#restart-button").addEventListener("click", restart);
-  document.querySelector("#early-book-button")?.addEventListener("click", finishBook);
+  document.querySelector("#restart-button").addEventListener("click", () => {
+    if (isBusy()) return;
+    restart();
+  });
+  document.querySelector("#early-book-button")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    finishBook();
+  });
   document.querySelectorAll(".direction").forEach((button) => {
-    button.addEventListener("click", () => chooseDirection(step.directions[Number(button.dataset.index)]));
+    button.addEventListener("click", () => {
+      if (isBusy()) return;
+      chooseDirection(step.directions[Number(button.dataset.index)]);
+    });
   });
   document.querySelectorAll(".candidate-card").forEach((button) => {
-    button.addEventListener("click", () => chooseCandidate(candidates[Number(button.dataset.candidate)]));
+    button.addEventListener("click", () => {
+      if (isBusy()) return;
+      chooseCandidate(candidates[Number(button.dataset.candidate)]);
+    });
   });
   document.querySelectorAll(".chapter-choice").forEach((button) => {
-    button.addEventListener("click", () => chooseCandidate(candidates[Number(button.dataset.candidate)]));
+    button.addEventListener("click", () => {
+      if (isBusy()) return;
+      chooseCandidate(candidates[Number(button.dataset.candidate)]);
+    });
   });
-  document.querySelector("#candidate-modal-close")?.addEventListener("click", closeCandidateModal);
-  document.querySelector("#change-direction-button")?.addEventListener("click", closeCandidateModal);
-  document.querySelector("#next-button")?.addEventListener("click", goNext);
-  document.querySelector("#book-button")?.addEventListener("click", finishBook);
+  document.querySelector("#candidate-modal-close")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    closeCandidateModal();
+  });
+  document.querySelector("#change-direction-button")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    closeCandidateModal();
+  });
+  document.querySelector("#next-button")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    goNext();
+  });
+  document.querySelector("#book-button")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    finishBook();
+  });
 }
 
 function renderBook(book = state.activeBook || sampleBook()) {
@@ -1324,7 +1384,10 @@ function renderBook(book = state.activeBook || sampleBook()) {
     </section>
   `;
   bindNav();
-  document.querySelector("#restart-button").addEventListener("click", restart);
+  document.querySelector("#restart-button").addEventListener("click", () => {
+    if (isBusy()) return;
+    restart();
+  });
 }
 
 function renderLibrary() {
@@ -1375,9 +1438,13 @@ function renderLibrary() {
     </section>
   `;
   bindNav();
-  document.querySelector("#new-book-button")?.addEventListener("click", () => navigate("start"));
+  document.querySelector("#new-book-button")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    navigate("start");
+  });
   document.querySelectorAll(".shelf-card").forEach((card) => {
     card.addEventListener("click", () => {
+      if (isBusy()) return;
       const book = visibleBooks.find((item) => item.id === card.dataset.book);
       update({ view: "book", activeBook: book });
     });

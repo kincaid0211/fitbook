@@ -16,11 +16,12 @@ export default async function handler(req, res) {
     const body = await readJson(req);
     const nodeConfig = getNodeConfig(body, "start");
     const parsed = await parseStartContent({ url: body.url || "", text: body.text || "" });
+    const hotItem = body.hotItem || null;
 
     const result = await callModelJson({
       system: nodePrompt(curatorSystem, nodeConfig),
       nodeConfig,
-      user: buildStartUserPayload({ parsed }),
+      user: buildStartUserPayload({ parsed, hotItem }),
     });
 
     const data = result.data;
