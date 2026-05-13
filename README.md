@@ -43,21 +43,22 @@ The confirmed implementation plan uses Vercel as the official deployment target:
 - `/` as the public demo entry.
 - `/admin.html` as the standalone AI node configuration page.
 - `/api/*` as Vercel Serverless Functions.
-- Kimi `kimi-k2.6` as the LLM backend.
+- SiliconFlow OpenAI-compatible chat completions as the LLM backend.
 - `dist/demo.html` as a backup standalone demo.
 
 Required environment variables:
 
 ```text
-MOONSHOT_API_KEY=...
-KIMI_BASE_URL=https://api.moonshot.cn/v1
-KIMI_MODEL=kimi-k2.6
-KIMI_FAST_MODEL=kimi-k2.5
 ZHIHU_ACCESS_SECRET=...
 SILICONFLOW_API_KEY=...
 SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
-SILICONFLOW_MODEL=Pro/deepseek-ai/DeepSeek-V3.2
-SILICONFLOW_FAST_MODEL=deepseek-ai/DeepSeek-V4-Flash
+SILICONFLOW_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_START_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_CANDIDATES_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_DIRECTIONS_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_CHOOSE_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_BOOK_MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507
+SILICONFLOW_COVER_MODEL=THUDM/GLM-4-32B-0414
 ```
 
 ## Notes
@@ -65,9 +66,9 @@ SILICONFLOW_FAST_MODEL=deepseek-ai/DeepSeek-V4-Flash
 - The current demo uses mock data to guarantee a stable hackathon presentation.
 - The prototype now presents article-link or pasted-text starts, AI-curated directions, candidate selection, early book generation, chapter-guide boundaries, and cover concept generation.
 - The first real API flow is implemented under `/api/*`: start, directions, candidates, choose, book, cover, and hotlist.
-- Candidate lists are currently generated from Zhihu/global search results with stable server-side rules; Kimi generates directions, chapter guides, bridges, books, and cover concepts.
+- Candidate lists are generated from Zhihu/global search results and can be AI-wrapped for presentation; SiliconFlow models generate directions, chapter guides, bridges, books, and cover concepts.
 - AI node prompts and model choices can be edited at `/admin.html`; settings are stored in browser localStorage and sent with API requests.
-- AI prompts have been consolidated in `lib/prompts.js`: a strengthened curator system prompt plus five node user-payload builders enforce field shape, length limits, direction-type diversity, candidate fidelity, and `chapters.length === route.length`. Verified end-to-end against SiliconFlow `Pro/moonshotai/Kimi-K2.6` on 2026-05-12.
+- AI prompts have been consolidated under `lib/prompts/`: a strengthened curator system prompt plus node user-payload builders enforce field shape, length limits, direction-type diversity, and candidate fidelity. Current node model choices are documented in `docs/SILICONFLOW_MODEL_BENCHMARK.md`.
 - Long-running AI steps show explicit progress messages and elapsed waiting time.
 - SiliconFlow can be used as a test or backup OpenAI-compatible model provider.
 - Kimi/API failures should show a clear failure message instead of silently falling back to mock data.

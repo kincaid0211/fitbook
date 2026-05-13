@@ -74,7 +74,7 @@ function showToast(text) {
 async function loadProviderModels(provider) {
   if (state.modelListLoading) return;
   state.modelListLoading = true;
-  state.modelListStatus = `正在从${provider === "siliconflow" ? "硅基流动" : "模型服务"}读取模型列表...`;
+  state.modelListStatus = "正在从硅基流动读取模型列表...";
   render();
   try {
     const response = await fetch(`/api/models?provider=${encodeURIComponent(provider)}`);
@@ -91,11 +91,12 @@ async function loadProviderModels(provider) {
     state.modelListStatus = `${error.message || "模型列表获取失败"}，已使用内置备用列表`;
     state.modelLists.siliconflow = [
       { value: "Pro/moonshotai/Kimi-K2.6", label: "Pro/moonshotai/Kimi-K2.6" },
-      { value: "moonshotai/Kimi-K2.6", label: "moonshotai/Kimi-K2.6" },
-      { value: "moonshotai/Kimi-K2.5", label: "moonshotai/Kimi-K2.5" },
-      { value: "moonshotai/Kimi-K2-Thinking", label: "moonshotai/Kimi-K2-Thinking" },
-      { value: "moonshotai/Kimi-K2-Instruct", label: "moonshotai/Kimi-K2-Instruct" },
-      { value: "moonshotai/Kimi-Dev-72B", label: "moonshotai/Kimi-Dev-72B" },
+      { value: "Pro/moonshotai/Kimi-K2.5", label: "Pro/moonshotai/Kimi-K2.5" },
+      { value: "Pro/moonshotai/Kimi-K2-Instruct-0905", label: "Pro/moonshotai/Kimi-K2-Instruct-0905" },
+      { value: "Pro/moonshotai/Kimi-K2-Thinking", label: "Pro/moonshotai/Kimi-K2-Thinking" },
+      { value: "Pro/deepseek-ai/DeepSeek-V3.2", label: "Pro/deepseek-ai/DeepSeek-V3.2" },
+      { value: "Pro/deepseek-ai/DeepSeek-V3", label: "Pro/deepseek-ai/DeepSeek-V3" },
+      { value: "Pro/deepseek-ai/DeepSeek-R1", label: "Pro/deepseek-ai/DeepSeek-R1" },
     ];
   } finally {
     state.modelListLoading = false;
@@ -199,8 +200,7 @@ function nodeCard(key, node) {
         <div class="form-row">
           <label>供应商
             <select data-field="provider">
-              <option value="siliconflow" ${node.provider === "siliconflow" ? "selected" : ""}>硅基流动聚合平台</option>
-              <option value="kimi" ${node.provider === "kimi" ? "selected" : ""}>Kimi 官方</option>
+              <option value="siliconflow" selected>硅基流动聚合平台</option>
             </select>
           </label>
           ${modelControl(node)}
@@ -272,14 +272,6 @@ function render() {
     form.querySelectorAll("[data-field]").forEach((input) => {
       const handler = () => {
         if (input.dataset.field === "provider") {
-          const nextProvider = input.value;
-          const nextModel =
-            nextProvider === "siliconflow"
-              ? state.config[key].model || (state.modelLists.siliconflow || [])[0]?.value || "Pro/moonshotai/Kimi-K2.6"
-              : state.config[key].model === "__custom__"
-                ? "kimi-k2.6"
-                : state.config[key].model;
-          state.config[key] = { ...state.config[key], provider: nextProvider, model: nextModel };
           render();
           return;
         }

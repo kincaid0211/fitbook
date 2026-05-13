@@ -350,6 +350,8 @@ h3 {
 .feature-grid article,
 .flow-grid article,
 .start-panel,
+.start-flow-card,
+.zhihu-fit-card,
 .reading-card,
 .side-panel,
 .preface,
@@ -722,20 +724,80 @@ h3 {
   padding: 0 22px;
 }
 
-.start-layout {
+.start-hero-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
-  gap: 26px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 36px;
   align-items: end;
-  padding-top: 46px;
+  margin-top: 46px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 248, 255, 0.92)),
+    linear-gradient(90deg, rgba(244, 184, 63, 0.1), rgba(0, 102, 255, 0.08));
+  padding: clamp(28px, 5vw, 52px);
+  box-shadow: 0 22px 60px rgba(20, 67, 128, 0.08);
 }
 
-.compact-hero {
-  padding: 22px 0;
+.start-hero-card h1 {
+  max-width: 920px;
+  font-size: clamp(38px, 5.6vw, 72px);
+}
+
+.start-hero-metrics {
+  display: grid;
+  gap: 12px;
+}
+
+.start-hero-metrics span {
+  display: grid;
+  gap: 2px;
+  min-height: 72px;
+  border: 1px solid var(--soft-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 13px 15px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 850;
+  box-shadow: 0 12px 28px rgba(20, 67, 128, 0.06);
+}
+
+.start-hero-metrics strong {
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.start-layout {
+  display: grid;
+  grid-template-columns: minmax(520px, 0.95fr) minmax(340px, 0.62fr);
+  gap: 22px;
+  align-items: start;
+  padding-top: 22px;
 }
 
 .start-panel {
-  padding: 24px;
+  padding: clamp(22px, 3vw, 32px);
+}
+
+.start-panel-head {
+  max-width: 690px;
+  margin-bottom: 22px;
+}
+
+.start-panel-head h2,
+.start-flow-card h2,
+.zhihu-fit-card h2 {
+  margin-bottom: 8px;
+  font-size: clamp(24px, 2.4vw, 32px);
+}
+
+.start-panel-head p,
+.zhihu-fit-card p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 .start-panel label {
@@ -763,11 +825,15 @@ h3 {
 
 .start-ai-notes span {
   border-radius: 999px;
-  background: #f3f8ff;
-  color: var(--muted);
+  background: #fff8e7;
+  color: #8a5a00;
   padding: 7px 10px;
   font-size: 13px;
   font-weight: 800;
+}
+
+.start-form-actions {
+  margin-top: 16px;
 }
 
 .input-row {
@@ -846,7 +912,170 @@ textarea:focus {
 
 .demo-route-button {
   width: 100%;
-  margin-top: 16px;
+}
+
+.start-companion {
+  display: grid;
+  gap: 18px;
+}
+
+.start-flow-card,
+.zhihu-fit-card {
+  padding: 24px;
+}
+
+.start-steps-list {
+  display: grid;
+  gap: 16px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.start-steps-list li {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 13px;
+  align-items: start;
+}
+
+.start-steps-list span {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 8px;
+  background: #e9f7f4;
+  color: #007a68;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.start-steps-list strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 17px;
+}
+
+.start-steps-list p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.zhihu-fit-card {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 250, 237, 0.92)),
+    linear-gradient(90deg, rgba(244, 184, 63, 0.12), rgba(44, 200, 255, 0.06));
+}
+
+.featured-starts {
+  margin-top: 28px;
+}
+
+.featured-starts-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.featured-starts-header h2 {
+  margin-bottom: 0;
+  font-size: clamp(24px, 2.5vw, 34px);
+}
+
+.refresh-hotlist {
+  min-height: 40px;
+  border: 1px solid #b9d3ff;
+  background: #fff;
+  color: var(--blue);
+  padding: 0 15px;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.refresh-hotlist:hover {
+  background: var(--blue-soft);
+  color: var(--blue-dark);
+}
+
+.refresh-hotlist:disabled {
+  opacity: 0.55;
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.featured-card {
+  display: grid;
+  grid-template-rows: auto auto minmax(46px, 1fr) auto;
+  gap: 7px;
+  min-height: 196px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 18px;
+  color: var(--ink);
+  text-align: left;
+  box-shadow: 0 14px 34px rgba(20, 67, 128, 0.06);
+}
+
+.featured-card:hover {
+  border-color: #9bc5ff;
+  background: #fff;
+  box-shadow: 0 22px 46px rgba(0, 102, 255, 0.1);
+}
+
+.featured-card .tag {
+  display: inline-flex;
+  justify-self: start;
+  border-radius: 999px;
+  background: #e9f7f4;
+  color: #007a68;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.featured-card h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.featured-card p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.featured-card small {
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.hotlist-error {
+  margin-bottom: 12px;
+  border: 1px solid #ffd4c7;
+  border-radius: 8px;
+  background: #fff7f4;
+  padding: 10px 12px;
+  color: #bf3d1f;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .app-header {
@@ -1781,6 +2010,7 @@ textarea:focus {
 
   .landing-hero,
   .hero-book-preview,
+  .start-hero-card,
   .start-layout,
   .book-detail-hero,
   .detail-grid,
@@ -1799,7 +2029,8 @@ textarea:focus {
   }
 
   .shelf-grid,
-  .feature-grid {
+  .feature-grid,
+  .featured-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1834,8 +2065,23 @@ textarea:focus {
     padding: 28px;
   }
 
+  .start-hero-card {
+    margin-top: 24px;
+    padding: 24px;
+  }
+
+  .start-hero-card h1 {
+    font-size: 38px;
+  }
+
+  .featured-starts-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .shelf-grid,
   .feature-grid,
+  .featured-grid,
   .flow-grid,
   .route-strip,
   .chapter-direction-list,

@@ -1,6 +1,6 @@
 /**
  * 端到端测试：验证入口体验增强功能
- * 测试范围：URL 预填充、精选起点卡片、Bookmarklet
+ * 测试范围：URL 预填充、知乎热榜入口、Bookmarklet
  */
 import { readFileSync } from "fs";
 import { JSDOM } from "jsdom";
@@ -66,7 +66,7 @@ test("app.js 包含 how-to-start 和 bookmarklet-link", () => {
   }
 });
 
-test("app.js 包含 featured-starts 卡片渲染", () => {
+test("app.js 包含知乎热榜卡片渲染", () => {
   const appJs = readFileSync(join(rootDir, "src/app.js"), "utf-8");
   if (!appJs.includes("featured-starts")) {
     throw new Error("未找到 featured-starts 样式区块");
@@ -74,8 +74,8 @@ test("app.js 包含 featured-starts 卡片渲染", () => {
   if (!appJs.includes("featured-card")) {
     throw new Error("未找到 featured-card 渲染");
   }
-  if (!appJs.includes("data-featured-index")) {
-    throw new Error("未找到 featured-card data-featured-index 属性");
+  if (!appJs.includes("data-hot-index")) {
+    throw new Error("未找到 featured-card data-hot-index 属性");
   }
 });
 
@@ -104,7 +104,7 @@ test("dist/demo.html 包含 how-to-start 和 bookmarklet", () => {
   }
 });
 
-test("dist/demo.html 包含精选起点卡片", () => {
+test("dist/demo.html 包含知乎热榜入口卡片", () => {
   const demo = readFileSync(join(rootDir, "dist/demo.html"), "utf-8");
   if (!demo.includes("featured-starts")) {
     throw new Error("demo.html 未内联 featured-starts");
@@ -112,8 +112,8 @@ test("dist/demo.html 包含精选起点卡片", () => {
   if (!demo.includes("featured-card")) {
     throw new Error("demo.html 未内联 featured-card");
   }
-  if (!demo.includes("如何突破自己的认知茧房")) {
-    throw new Error("demo.html 未包含精选起点内容");
+  if (!demo.includes("从知乎热榜直接开始")) {
+    throw new Error("demo.html 未包含新版热榜入口文案");
   }
 });
 
@@ -152,7 +152,7 @@ test("jsdom 加载 dist/demo.html 后落地页显示 bookmarklet", async () => {
   }
 });
 
-test("jsdom 加载后导航到 start 页显示精选起点卡片", async () => {
+test("jsdom 加载后导航到 start 页显示热榜入口卡片", async () => {
   const html = readFileSync(join(rootDir, "dist/demo.html"), "utf-8");
   const dom = new JSDOM(html, {
     url: "http://localhost:5173/",
@@ -174,7 +174,7 @@ test("jsdom 加载后导航到 start 页显示精选起点卡片", async () => {
 
   const featuredCards = document.querySelectorAll(".featured-card");
   if (featuredCards.length !== 6) {
-    throw new Error(`精选起点卡片数量应为 6，实际为 ${featuredCards.length}`);
+    throw new Error(`热榜入口卡片数量应为 6，实际为 ${featuredCards.length}`);
   }
 
   const tags = [...featuredCards].map((card) => card.querySelector(".tag")?.textContent);

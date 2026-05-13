@@ -55,6 +55,7 @@
 ├── docs/
 │   ├── AI_FUNCTION_LOGIC.md          # 非书核心 AI 功能逻辑、流程、边界和兜底策略
 │   ├── AI_PERFORMANCE_OPTIMIZATION.md # AI 执行过程、性能瓶颈和 10 秒内优化方案
+│   ├── SILICONFLOW_MODEL_BENCHMARK.md # 硅基流动模型响应测试与节点配置方案
 │   ├── TECHNICAL_PLAN.md             # 主流程、Kimi、Vercel 和 API 实现技术方案
 │   └── UI_VISUALS.md                 # 非书关键页面 UI 视觉稿说明
 ├── lib/                              # 服务端共享模块
@@ -168,15 +169,16 @@ npm run probe:global-search
 3. 配置环境变量：
 
 ```text
-MOONSHOT_API_KEY=...
-KIMI_BASE_URL=https://api.moonshot.cn/v1
-KIMI_MODEL=kimi-k2.6
-KIMI_FAST_MODEL=kimi-k2.5
 ZHIHU_ACCESS_SECRET=...
 SILICONFLOW_API_KEY=...
 SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
-SILICONFLOW_MODEL=Pro/deepseek-ai/DeepSeek-V3.2
-SILICONFLOW_FAST_MODEL=deepseek-ai/DeepSeek-V4-Flash
+SILICONFLOW_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_START_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_CANDIDATES_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_DIRECTIONS_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_CHOOSE_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_BOOK_MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507
+SILICONFLOW_COVER_MODEL=THUDM/GLM-4-32B-0414
 ```
 
 4. 正式访问入口使用：
@@ -189,11 +191,11 @@ SILICONFLOW_FAST_MODEL=deepseek-ai/DeepSeek-V4-Flash
 
 注意：
 
-- 不要把 `MOONSHOT_API_KEY`、`ZHIHU_ACCESS_SECRET` 或任何本地 Key 写入前端、公开文档或提交记录。
+- 不要把 `SILICONFLOW_API_KEY`、`ZHIHU_ACCESS_SECRET` 或任何本地 Key 写入前端、公开文档或提交记录。
 - 硅基流动可作为测试或备用模型服务；真实 `SILICONFLOW_API_KEY` 只允许存在于本地 `.env.local` 或 Vercel 环境变量中。
 - `dist/demo.html` 保留为备用单文件演示，不作为正式 Vercel 入口。
 - 如果 Kimi 或搜索接口调用失败，真实流程应展示失败提示，不静默伪装为真实结果。
-- 新增 `KIMI_FAST_MODEL` / `SILICONFLOW_FAST_MODEL` 用于快速节点（start/directions/cover）的轻量模型分层；如不配置则沿用默认模型。
+- 硅基流动节点级默认模型已在服务端内置；如需覆盖，可配置 `SILICONFLOW_START_MODEL` / `SILICONFLOW_CANDIDATES_MODEL` / `SILICONFLOW_DIRECTIONS_MODEL` / `SILICONFLOW_CHOOSE_MODEL` / `SILICONFLOW_BOOK_MODEL` / `SILICONFLOW_COVER_MODEL`。
 - 新增 URL 参数预填充支持：`?url=` 和 `?text=` 可直接触发探索流程，便于书签、分享和外部跳转。
 
 ### 方式二：静态托管单文件
@@ -247,6 +249,19 @@ git push fitbook master
 
 ### 2026-05-13
 
+- 重新设计开始探索页：首屏改为“起点说明 + 关键流程指标”，主体改为左侧输入起点、右侧展示“理解起点 → 选择知识卡片 → 挑下一章”的新流程，底部保留知乎热榜入口池，减少旧版大面积空白和窄栏挤压。
+- 起点页文案同步到新版功能：强调 AI 先提炼 3-6 张知识卡片、用户选择锚点后进入章节式探索，并明确不替代原文全文、优先连接知乎内容、保留用户选择。
+- 更新 `scripts/build-standalone.mjs`：单文件演示现在会内联 `src/aiNodeConfig.js`，避免 `dist/demo.html` 残留模块 import 导致直接打开时脚本报错。
+- 更新 `scripts/test-entry-features.mjs`：入口测试从旧“精选起点”口径调整为“知乎热榜入口”，并继续覆盖 Bookmarklet、URL/text 参数自动触发和起点页卡片渲染。
+- 重新运行 `npm run check`、`npm run build:standalone` 和 `node scripts/test-entry-features.mjs`，本地冒烟检查与 12 项入口测试全部通过。当前沙箱不允许监听本地预览端口，Playwright CLI 需要联网拉取依赖但网络受限，浏览器截图核验待在正常本地环境补测。
+- 拉取硅基流动当前 `/models` 列表（102 个模型），对 `start / candidates / directions / choose / book / cover` 六个 AI 节点做结构化 JSON 响应测试，新增 `docs/SILICONFLOW_MODEL_BENCHMARK.md` 记录模型清单筛选、实测耗时和节点配置方案。
+- 更新服务端节点默认模型：`start/candidates/directions/choose/cover` 默认使用 `THUDM/GLM-4-32B-0414`，`book` 默认使用 `Qwen/Qwen3-30B-A3B-Instruct-2507`；新增 `SILICONFLOW_START_MODEL`、`SILICONFLOW_CANDIDATES_MODEL`、`SILICONFLOW_DIRECTIONS_MODEL`、`SILICONFLOW_CHOOSE_MODEL`、`SILICONFLOW_BOOK_MODEL`、`SILICONFLOW_COVER_MODEL` 六个环境变量覆盖口。
+- 更新管理页 AI 节点默认模型：长提示词模式下 `start` 默认使用更稳的 `Qwen/Qwen2.5-32B-Instruct`，其余短节点按实测结果使用 GLM/Qwen3 组合。
+- 前端会自动清理旧的 Kimi-K2.5/K2.6、DeepSeek-V4-Flash 或快节点 DeepSeek-V3.2 本地配置，避免浏览器 localStorage 中的旧模型拖慢主流程。
+- 本地 `.env.local` 已补齐六个 `SILICONFLOW_*_MODEL` 节点配置，短 JSON 调用确认六个节点实际命中预期模型。
+- 更新 `README.md` 的模型服务和环境变量说明，移除旧 Kimi/DeepSeek Flash 默认配置。
+- 复测结论：Kimi-K2.5/K2.6 在当前硅基流动链路下多个真实节点 30-35 秒超时，不再建议作为主流程默认模型；`Pro/deepseek-ai/DeepSeek-V3.2` 质量稳定但长尾明显，适合作为后台增强或人工兜底。
+- 重新运行 `npm run check` 与 `npm run build:standalone`，并更新 `dist/demo.html`。
 - 新增 URL 参数预填充：`?url=` 和 `?text=` 自动填入起点并触发探索，支持从书签、分享、外部链接一键进入。
 - 新增精选起点卡片：起点页底部展示 6 个高质量知乎问题卡片（音乐、认知、AI、心理学、社会、成长），用户零输入即可启动探索。
 - 新增 Bookmarklet：落地页新增可拖拽书签链接，用户拖到浏览器书签栏后，在任意网页点击即可一键开启非书探索。
@@ -260,7 +275,7 @@ git push fitbook master
 - `src/aiNodeConfig.js` 调低各节点默认超时；`api/choose.js` 修复硬编码 `|| 45` 超时 fallback。
 - 端到端测试验证：start 68s→26s，candidates 0.85s（零 AI），choose 25s 触发 fallback 保底，book 46s→29.8s。
 - 重新生成 `dist/demo.html`。
-- 硅基流动模型分层配置落地：基于节点任务复杂度重新分配默认模型，降低整体调用成本并提升响应速度。
+- 硅基流动模型分层配置初版（已被本日上方的 2026-05-13 复测方案取代）：基于节点任务复杂度重新分配默认模型，降低整体调用成本并提升响应速度。
   - `start` 改为 `Pro/deepseek-ai/DeepSeek-V3.2`（结构化理解 + JSON 准确性高，成本约为 Kimi-K2.6 的 1/3）。
   - `directions` 改为 `Pro/deepseek-ai/DeepSeek-V3.2`（方向生成需区分度和创意，V3.2 足够且更快）。
   - `choose` 保留 `Pro/moonshotai/Kimi-K2.6`（核心体验节点，需同时生成章节导读、知识桥、兴趣画像和下一章方向，质量优先）。
@@ -322,8 +337,8 @@ git push fitbook master
 - 新增依赖 `@mozilla/readability` 和 `jsdom`，用于任意文章链接的正文解析；新增 `package-lock.json` 锁定依赖版本。
 - 本地开发服务 `scripts/dev-server.mjs` 新增 `/api/*` 动态路由支持，便于本地测试 Vercel Serverless 函数。
 - 已用硅基流动备用模型完成 API 烟测：`/api/start`、`/api/candidates`、`/api/choose`、`/api/book` 和 `/api/cover` 均能返回结构化结果；`/api/candidates` 同时成功调用知乎搜索和全网搜索。
-- 新增 `docs/TECHNICAL_PLAN.md`，记录已确认的完整技术方案：Vercel 部署、Kimi `kimi-k2.6`、Serverless API、网页解析依赖、知乎/全网搜索代理、localStorage 存储、错误处理和实施顺序。
-- 明确 Vercel 正式入口使用 `/`，`dist/demo.html` 作为备用单文件演示；环境变量包括 `MOONSHOT_API_KEY`、`KIMI_BASE_URL`、`KIMI_MODEL` 和 `ZHIHU_ACCESS_SECRET`。
+- 新增 `docs/TECHNICAL_PLAN.md`，记录早期技术方案：Vercel 部署、Serverless API、网页解析依赖、知乎/全网搜索代理、localStorage 存储、错误处理和实施顺序；当前大模型配置已更新为硅基流动节点级模型。
+- 明确 Vercel 正式入口使用 `/`，`dist/demo.html` 作为备用单文件演示；当前环境变量以本文上方“部署方式”章节为准。
 - 新增硅基流动作为测试/备用模型服务的配置说明：`SILICONFLOW_API_KEY`、`SILICONFLOW_BASE_URL` 和 `SILICONFLOW_MODEL`；真实密钥只保存在本地 ignored 环境文件或 Vercel 环境变量。
 - 明确 Kimi 调用失败时直接给用户失败提示，不静默回退到 mock 数据；mock 路线只作为用户手动选择的演示备用入口。
 - 按核心 AI 功能逻辑更新原型界面：落地页和起点页从"知乎链接起点"调整为"任意文章链接或粘贴文本起点"，突出 AI 知识策展人、兴趣驱动探索、候选内容选择和自动封面生成。

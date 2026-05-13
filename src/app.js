@@ -1,8 +1,8 @@
 import { adventure, sampleUrl } from "./mockData.js";
+import { shouldResetConfig, aiConfigStorageKey } from "./aiNodeConfig.js";
 
 const app = document.querySelector("#app");
 const libraryKey = "feishu-library";
-const aiConfigStorageKey = "feishu-ai-node-config";
 const logoSrc = window.FEISHU_LOGO_SRC || "assets/feishu-logo.png";
 let loadingTimer = null;
 let thinkingModalEl = null;
@@ -192,24 +192,41 @@ function conceptCount(book) {
 }
 
 async function apiPost(path, payload) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ...payload,
-      aiConfig: readAiConfig(),
-    }),
-  });
-  const data = await response.json().catch(() => null);
-  if (!response.ok || !data?.ok) {
-    throw new Error(data?.message || "网络有点问题，请稍后再试。已读过的章节不会丢失。");
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...payload,
+        aiConfig: readAiConfig(),
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.message || "网络有点问题，请稍后再试。已读过的章节不会丢失。");
+    }
+    return data;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      throw new Error("请求超时，AI 服务响应较慢，请稍后重试。");
+    }
+    throw error;
   }
-  return data;
 }
 
 function readAiConfig() {
   try {
-    return JSON.parse(localStorage.getItem(aiConfigStorageKey) || "{}");
+    const raw = JSON.parse(localStorage.getItem(aiConfigStorageKey) || "{}");
+    if (shouldResetConfig(raw)) {
+      localStorage.removeItem(aiConfigStorageKey);
+      return {};
+    }
+    return raw;
   } catch {
     return {};
   }
@@ -1036,68 +1053,108 @@ function renderStart() {
   app.innerHTML = `
     <section class="screen start-screen">
       ${nav("start")}
-      <div class="start-layout">
-        <div class="hero compact-hero">
-          <p class="eyebrow">开始读一本新的非书</p>
-          <h1>从任意一篇文章开始。</h1>
-          <p class="lead">粘贴链接或正文，AI 会读完起点，然后为你推荐下一章的方向。</p>
+      <header class="start-hero-card">
+        <div>
+          <p class="eyebrow">开始一本新的非书</p>
+          <h1>把一篇文章，变成你的阅读起点。</h1>
+          <p class="lead">粘贴知乎内容、网页链接或一段正文。AI 会先提炼知识卡片，你选择一个锚点，再进入章节式探索。</p>
         </div>
-        <form class="start-panel" id="start-form">
-          <label for="url-input">文章链接</label>
+        <div class="start-hero-metrics" aria-label="非书流程概览">
+          <span><strong>3-6</strong> 张知识卡片</span>
+          <span><strong>3</strong> 章即可装订</span>
+          <span><strong>10</strong> 章内完成</span>
+        </div>
+      </header>
+
+      <div class="start-layout">
+        <form class="start-panel start-compose" id="start-form">
+          <div class="start-panel-head">
+            <p class="eyebrow">第一步</p>
+            <h2>放入你的起点</h2>
+            <p>它可以是一篇知乎回答、一条热榜问题，也可以是你正在读的一段文字。</p>
+          </div>
+
+          <label for="url-input">文章或问题链接</label>
           <div class="input-row">
             <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意文章链接" />
-            <button type="submit">开始读非书</button>
+            <button type="submit">理解起点</button>
           </div>
           <div class="paste-block">
-            <label for="article-input">或者，直接粘贴正文</label>
-            <textarea id="article-input" rows="5" placeholder="粘贴标题、摘要或正文片段，也可以只放你最有感觉的一段。">${state.articleText}</textarea>
+            <label for="article-input">或者，直接粘贴正文片段</label>
+            <textarea id="article-input" rows="6" placeholder="粘贴标题、摘要或正文片段。只放最有感觉的一段也可以，AI 会保持克制地理解。">${state.articleText}</textarea>
           </div>
           <p class="${detected.ok ? "hint good" : "hint"}">${detected.ok ? `已识别：${detected.label}` : state.selectedDirection || detected.label}</p>
           ${state.error ? `<p class="error-message">${state.error}</p>` : ""}
           <div class="start-ai-notes">
-            <span>AI 帮你提炼主题</span>
-            <span>推荐知乎优质内容</span>
-            <span>三章即可成书</span>
+            <span>不替代原文全文</span>
+            <span>优先连接知乎内容</span>
+            <span>保留你的选择</span>
           </div>
-          <button class="ghost-button demo-route-button" type="button" id="demo-route-button">先看一段示例旅程</button>
 
-          <div class="featured-starts">
-            <style>
-              .featured-starts { margin-top: 2.5rem; }
-              .featured-starts-header { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1rem; }
-              .featured-starts-heading { font-size: 0.875rem; color: #64748b; margin: 0; }
-              .refresh-hotlist { font-size: 0.75rem; padding: 0.25rem 0.625rem; background: #f1f5f9; color: #475569; border: none; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; }
-              .refresh-hotlist:hover { background: #e2e8f0; color: #2563eb; }
-              .refresh-hotlist:disabled { opacity: 0.5; cursor: not-allowed; }
-              .featured-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-              .featured-card { padding: 1rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #fff; cursor: pointer; transition: all 0.2s; text-align: left; }
-              .featured-card:hover { border-color: #2563eb; box-shadow: 0 4px 12px rgba(37,99,235,0.08); transform: translateY(-2px); }
-              .featured-card .tag { display: inline-block; font-size: 0.75rem; padding: 0.25rem 0.5rem; background: #eff6ff; color: #2563eb; border-radius: 999px; margin-bottom: 0.5rem; font-weight: 500; }
-              .featured-card h4 { font-size: 0.9375rem; margin: 0 0 0.375rem; color: #0f172a; line-height: 1.4; }
-              .featured-card p { font-size: 0.8125rem; color: #64748b; margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-              .hotlist-error { text-align: center; color: #ef4444; font-size: 0.875rem; padding: 0.5rem 0; }
-              @media (max-width: 768px) { .featured-grid { grid-template-columns: repeat(2, 1fr); } }
-              @media (max-width: 480px) { .featured-grid { grid-template-columns: 1fr; } }
-            </style>
-            <div class="featured-starts-header">
-              <p class="featured-starts-heading">或从知乎热榜开始</p>
-              <button class="refresh-hotlist" type="button" id="refresh-hotlist" ${state.hotListLoading ? "disabled" : ""}>
-                ${state.hotListLoading ? "刷新中..." : "刷新"}
-              </button>
-            </div>
-            ${state.hotListError ? `<div class="hotlist-error">${state.hotListError}</div>` : ""}
-            <div class="featured-grid">
-              ${state.hotList.map((item, index) => `
-                <button class="featured-card" type="button" data-hot-index="${index}">
-                  <span class="tag">${item.tag}</span>
-                  <h4>${item.title}</h4>
-                  <p>${item.excerpt}</p>
-                </button>
-              `).join("")}
-            </div>
+          <div class="start-form-actions">
+            <button class="ghost-button demo-route-button" type="button" id="demo-route-button">先看示例非书</button>
           </div>
         </form>
+
+        <aside class="start-companion" aria-label="起点理解流程">
+          <section class="start-flow-card">
+            <p class="eyebrow">接下来</p>
+            <h2>先选锚点，再写章节。</h2>
+            <ol class="start-steps-list">
+              <li>
+                <span>01</span>
+                <div>
+                  <strong>理解起点</strong>
+                  <p>AI 读取可获得的信息，提炼主题、概念、争议和延展方向。</p>
+                </div>
+              </li>
+              <li>
+                <span>02</span>
+                <div>
+                  <strong>选择知识卡片</strong>
+                  <p>你从 3-6 张卡片中选一个锚点，决定这本非书的第一条线索。</p>
+                </div>
+              </li>
+              <li>
+                <span>03</span>
+                <div>
+                  <strong>挑下一章</strong>
+                  <p>系统连接知乎优质内容和必要背景，每一章都由你确认。</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="zhihu-fit-card">
+            <p class="eyebrow">知乎生态</p>
+            <h2>让热议内容继续生长。</h2>
+            <p>非书会把热榜、回答、文章和搜索结果组织成可继续阅读的章节线索，保留原文入口，也保留创作者和讨论现场。</p>
+          </section>
+        </aside>
       </div>
+
+      <section class="featured-starts">
+        <div class="featured-starts-header">
+          <div>
+            <p class="eyebrow">今日入口</p>
+            <h2>从知乎热榜直接开始</h2>
+          </div>
+          <button class="refresh-hotlist" type="button" id="refresh-hotlist" ${state.hotListLoading ? "disabled" : ""}>
+            ${state.hotListLoading ? "刷新中..." : "刷新热榜"}
+          </button>
+        </div>
+        ${state.hotListError ? `<div class="hotlist-error">${state.hotListError}</div>` : ""}
+        <div class="featured-grid">
+          ${state.hotList.map((item, index) => `
+            <button class="featured-card" type="button" data-hot-index="${index}">
+              <span class="tag">${item.tag}</span>
+              <h4>${item.title}</h4>
+              <p>${item.excerpt}</p>
+              <small>用这个问题开启非书</small>
+            </button>
+          `).join("")}
+        </div>
+      </section>
     </section>
   `;
 

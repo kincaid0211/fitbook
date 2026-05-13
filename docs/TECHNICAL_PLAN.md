@@ -14,24 +14,27 @@
 ### 后端
 
 - 使用 Vercel Serverless Functions 承载 `/api/*`。
-- 所有 Kimi、知乎内容 API、全网搜索 API 和网页解析请求都通过服务端代理完成。
+- 所有大模型、知乎内容 API、全网搜索 API 和网页解析请求都通过服务端代理完成。
 - 前端不直接接触任何 API Key、Access Secret 或签名材料。
 
 ### 大模型
 
-- 模型底座：Kimi。
-- 默认模型：`kimi-k2.6`。
+- 模型服务：统一使用硅基流动（SiliconFlow）OpenAI 兼容接口。
 - 调用方式：OpenAI 兼容 Chat Completions。
 - 所有核心 AI 节点优先使用结构化 JSON 输出。
-- 测试/备用模型服务：硅基流动，模型 `Pro/moonshotai/Kimi-K2.6`，同样按 OpenAI 兼容接口接入。
 
-### 快慢模型分层
+### 节点模型分层
 
 为了改善端到端体验，AI 节点按响应要求分层：
 
-- 快速节点：起点理解、下一站方向、封面方案。建议使用更轻量、响应更快的模型。
-- 深度节点：章节导读与知识桥、最终非书生成。可以保留更强模型。
-- 非模型节点：候选内容生成先由知乎搜索、全网搜索和服务端规则稳定产出，避免每一步都等待大模型。
+- `start`：默认 `THUDM/GLM-4-32B-0414`，优先保证半分钟内返回合法 JSON。
+- `candidates`：默认 `THUDM/GLM-4-32B-0414`，为搜索候选做短文案包装；失败时规则化展示兜底。
+- `directions`：默认 `THUDM/GLM-4-32B-0414`，生成 3 个下一章方向。
+- `choose`：默认 `THUDM/GLM-4-32B-0414`，承担章节导读、知识桥和下一章方向，是主流程关键节点。
+- `book`：默认 `Qwen/Qwen3-30B-A3B-Instruct-2507`，生成书名、序言、标签和探索总结。
+- `cover`：默认 `THUDM/GLM-4-32B-0414`，生成短封面方案；失败时 CSS 规则封面兜底。
+
+模型测试和配置依据见 `docs/SILICONFLOW_MODEL_BENCHMARK.md`。当前不建议把 `Pro/moonshotai/Kimi-K2.5` / `Pro/moonshotai/Kimi-K2.6` 作为主流程默认模型；实测多个真实节点容易接近或超过 30 秒。
 
 项目新增独立配置页：
 
@@ -67,24 +70,25 @@
 Vercel 和本地 `.env` 需要配置：
 
 ```text
-MOONSHOT_API_KEY=...
-KIMI_BASE_URL=https://api.moonshot.cn/v1
-KIMI_MODEL=kimi-k2.6
 ZHIHU_ACCESS_SECRET=...
 SILICONFLOW_API_KEY=...
 SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
-SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
+SILICONFLOW_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_START_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_CANDIDATES_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_DIRECTIONS_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_CHOOSE_MODEL=THUDM/GLM-4-32B-0414
+SILICONFLOW_BOOK_MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507
+SILICONFLOW_COVER_MODEL=THUDM/GLM-4-32B-0414
 ```
 
 说明：
 
-- `MOONSHOT_API_KEY`：Kimi / Moonshot API Key。
-- `KIMI_BASE_URL`：默认使用 `https://api.moonshot.cn/v1`，必要时可切换到其他兼容域名。
-- `KIMI_MODEL`：默认 `kimi-k2.6`。
 - `ZHIHU_ACCESS_SECRET`：知乎数据开放平台 Bearer Access Secret。
-- `SILICONFLOW_API_KEY`：硅基流动 API Key，用于测试或作为 Kimi 官方 Key 未配置时的备用模型服务。
+- `SILICONFLOW_API_KEY`：硅基流动 API Key。
 - `SILICONFLOW_BASE_URL`：硅基流动 OpenAI 兼容接口地址。
-- `SILICONFLOW_MODEL`：硅基流动上的 Kimi-K2.6 模型名。
+- `SILICONFLOW_MODEL`：硅基流动兜底默认模型。
+- `SILICONFLOW_*_MODEL`：节点级模型覆盖项；不配置时服务端使用内置节点默认模型。
 - `.env`、`.env.*`、本地 `note/` 下的密钥材料不得提交到 Git。
 
 ## 3. 主流程
@@ -101,7 +105,7 @@ SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
 
 ### 3.2 文章理解
 
-服务端调用 Kimi，对起点内容做结构化理解：
+服务端调用大模型，对起点内容做结构化理解：
 
 - 标题。
 - 来源。
@@ -148,11 +152,11 @@ SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
 
 默认最终章节优先使用知乎内容。只有用户主动选择全网候选时，全网内容才进入最终章节，并且必须明确标注来源。
 
-当前实现为了保证主流程响应速度，候选列表由服务端搜索结果和规则化包装稳定产出；用户选择候选后，再由 Kimi 生成章节导读、知识桥和兴趣画像更新。
+当前实现为了保证主流程响应速度，候选列表由服务端搜索结果和规则化包装稳定产出；用户选择候选后，再由大模型生成章节导读、知识桥和兴趣画像更新。
 
 ### 3.5 选择与知识桥
 
-用户选择候选后，服务端调用 Kimi 生成：
+用户选择候选后，服务端调用大模型生成：
 
 - 章节导读。
 - 关键概念。
@@ -168,7 +172,7 @@ SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
 - 走满 10 站后生成非书。
 - 第 3 站后中途生成非书。
 
-服务端调用 Kimi 生成：
+服务端调用大模型生成：
 
 - 书名。
 - 副标题。
@@ -237,7 +241,7 @@ SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
 
 实现说明：
 
-- 当前版本不在该接口内调用 Kimi，以免搜索结果二次筛选耗时过长。
+- 当前版本不在该接口内调用大模型，以免搜索结果二次筛选耗时过长。
 - 该接口基于知乎搜索和全网搜索结果生成“知乎优先 / 全网背景 / 意外发现”候选。
 - AI 策展判断延后到 `/api/choose`，由用户选定候选后生成知识桥。
 
@@ -285,7 +289,7 @@ SILICONFLOW_MODEL=Pro/moonshotai/Kimi-K2.6
 
 ## 5. 错误处理策略
 
-### Kimi 调用失败
+### 大模型调用失败
 
 - 直接给用户失败提示。
 - 不静默回退到 mock 数据。
@@ -325,7 +329,7 @@ MVP 阶段使用轻量内存缓存即可：
 
 缓存目的：
 
-- 降低 Kimi 和知乎 API 重复调用。
+- 降低大模型和知乎 API 重复调用。
 - 避免触发知乎 API 频率限制。
 - 提高演示稳定性。
 
@@ -348,14 +352,14 @@ dist/demo.html
 部署前需要：
 
 - 在 Vercel 配置环境变量。
-- 确认 `MOONSHOT_API_KEY` 和 `ZHIHU_ACCESS_SECRET` 可用。
+- 确认 `SILICONFLOW_API_KEY` 和 `ZHIHU_ACCESS_SECRET` 可用。
 - 运行本地检查和构建。
 - 确认 `/api/*` 不会把密钥返回到前端。
 
 ## 8. 实施顺序
 
 1. 搭建 Vercel 兼容的 API 目录。
-2. 新增 Kimi 调用层和结构化 JSON 工具。
+2. 新增大模型调用层和结构化 JSON 工具。
 3. 新增网页解析服务。
 4. 新增知乎搜索和全网搜索服务端代理。
 5. 实现 `/api/start`。
