@@ -1326,25 +1326,47 @@ function candidateTitle(candidate) {
   return candidate.curatedTitle || candidate.title || "未命名章节";
 }
 
-function candidateSignals(candidate) {
-  const signals = candidate.trustSignals?.length
-    ? candidate.trustSignals
-    : [
-        candidate.sourceLabel || candidate.source || "资料来源",
-        candidate.author ? `作者 ${candidate.author}` : "",
-        candidate.voteUpCount ? `${candidate.voteUpCount} 赞同` : "",
-        candidate.commentCount ? `${candidate.commentCount} 评论` : "",
-      ].filter(Boolean);
-  return signals.slice(0, 6).map((signal) => `<span>${signal}</span>`).join("");
+function candidateSource(candidate) {
+  return candidate.sourceLabel || candidate.source || candidate.contentType || "候选内容";
 }
 
 function candidateTags(candidate) {
   const tags = candidate.fitTags?.length ? candidate.fitTags : candidate.concepts || [];
-  return tags.slice(0, 3).map((tag) => `<span>${tag}</span>`).join("");
+  return tags.slice(0, 3).map((tag) => `<span>${escapeHtml(String(tag))}</span>`).join("");
+}
+
+function candidateBrief(candidate) {
+  return (
+    candidate.curatorPreview ||
+    candidate.summary ||
+    candidate.reason ||
+    "这篇内容可以继续承接当前章节，让这本非书拥有更明确的下一步。"
+  );
+}
+
+function candidateConnection(candidate) {
+  return (
+    candidate.connection ||
+    candidate.bridgePreview ||
+    "它能接住当前章节留下的问题，继续推进这本非书的阅读线索。"
+  );
+}
+
+function candidateGain(candidate) {
+  return (
+    candidate.readerGain ||
+    candidate.summary ||
+    "你会获得一个更清楚的理解入口，帮助判断这条线索是否值得继续。"
+  );
 }
 
 function renderCandidateModal(candidates, selectedDirectionText) {
   if (!state.selectedDirection || !candidates || !candidates.length) return "";
+  const selectedIndex = Math.max(
+    0,
+    candidates.findIndex((candidate) => state.selectedCandidate?.title === candidate.title),
+  );
+  const selected = candidates[selectedIndex] || candidates[0];
   return `
     <div class="modal-backdrop" role="presentation">
       <section class="chapter-modal" role="dialog" aria-modal="true" aria-labelledby="chapter-modal-title">
@@ -1352,22 +1374,39 @@ function renderCandidateModal(candidates, selectedDirectionText) {
         <header class="chapter-modal-header">
           <div>
             <p class="eyebrow">选择下一章</p>
-            <h2 id="chapter-modal-title">选择下一章</h2>
+            <h2 id="chapter-modal-title">这一章，想怎么接？</h2>
           </div>
-          <p>你选了「${selectedDirectionText}」。下面三篇文章都适合作为下一章，但会把你带向不同的阅读重点。</p>
+          <div class="direction-recap">
+            <span>已选方向</span>
+            <strong>${escapeHtml(selectedDirectionText || "继续阅读")}</strong>
+            <p>下面三篇都能接上前文，但阅读重点不同。先看一句话判断，再选你愿意放进这本非书的下一章。</p>
+          </div>
         </header>
+        <section class="chapter-modal-summary" aria-label="当前选择摘要">
+          <div>
+            <span>当前推荐</span>
+            <strong>${escapeHtml(candidateTitle(selected))}</strong>
+          </div>
+          <p>${escapeHtml(candidateConnection(selected))}</p>
+        </section>
         <div class="chapter-choice-list" role="radiogroup" aria-label="选择下一章">
           ${candidates
             .map(
               (candidate, index) => `
                 <button class="chapter-choice ${state.selectedCandidate?.title === candidate.title ? "selected" : ""}" type="button" data-candidate="${index}" role="radio" aria-checked="${state.selectedCandidate?.title === candidate.title}">
-                  <div class="signal-row">${candidateSignals(candidate)}</div>
-                  <strong>${candidateTitle(candidate)}</strong>
-                  <p><b>这一章怎么接上前文：</b>${candidate.connection || candidate.bridgePreview || "它能接住当前章节留下的问题，继续推进这本非书的阅读线索。"}</p>
-                  <p><b>读完能获得什么：</b>${candidate.readerGain || candidate.summary || "你会获得一个更清楚的理解入口，帮助判断这条线索是否值得继续。"}</p>
+                  <div class="choice-topline">
+                    <span class="choice-index">${String(index + 1).padStart(2, "0")}</span>
+                    <span class="choice-source">${escapeHtml(candidateSource(candidate))}</span>
+                    ${state.selectedCandidate?.title === candidate.title ? `<span class="selected-note">已选</span>` : ""}
+                  </div>
+                  <strong>${escapeHtml(candidateTitle(candidate))}</strong>
+                  <p class="choice-brief">${escapeHtml(candidateBrief(candidate))}</p>
+                  <div class="choice-reasons">
+                    <p><b>怎么接上前文</b><span>${escapeHtml(candidateConnection(candidate))}</span></p>
+                    <p><b>读完获得什么</b><span>${escapeHtml(candidateGain(candidate))}</span></p>
+                  </div>
                   <div class="choice-footer">
                     <div class="tag-row compact">${candidateTags(candidate)}</div>
-                    ${state.selectedCandidate?.title === candidate.title ? `<span class="selected-note">已选择为下一章</span>` : ""}
                   </div>
                 </button>
               `,

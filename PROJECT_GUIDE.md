@@ -249,6 +249,9 @@ git push fitbook master
 
 ### 2026-05-13
 
+- 重新设计"选择下一章"候选弹窗：顶部改为"已选方向"摘要与当前推荐判断，中部改为三列候选比较卡，卡片按"来源/标题/一句话判断/怎么接上前文/读完获得什么/标签"展示，移除原先堆叠长段落和底部重复可信信号，避免内容压住按钮区。
+- 候选弹窗样式同步优化：扩大桌面端弹窗宽度，增加当前选择摘要条，限制摘要与理由文本行数，修复卡片标题裁切问题，并在窄屏下自动切回单列显示。
+- 重新生成 `dist/demo.html`，运行 `npm run check`；使用 `127.0.0.1:5174` 打开演示流程并核验"开始探索 -> 先看示例非书 -> 选择方向 -> 候选弹窗"视觉状态，浏览器控制台无错误。
 - **修复方向选择后候选弹窗未显示根因**：`src/app.js` 的 `chooseDirection` 真实 API 成功分支 `update({...})` 漏写 `selectedDirection: direction`，导致 `renderCandidateModal` 守卫 `!state.selectedDirection` 始终为真、候选章节弹窗永远不渲染——用户表现为"思考模态框弹出后立即消失，没有任何反馈"。已在 update 中补回该字段并重新生成 `dist/demo.html`。
 - **修复探索页选择方向后流程中断问题**：`src/app.js` 中 `chooseDirection` 增加 `data.candidates` 的数组校验，`renderCandidateModal` 增加 `candidates` 的 undefined/null 防御，防止 API 返回异常时 `TypeError` 导致页面卡死。
 - **为知乎搜索添加 15 秒超时**：`lib/zhihu.js` 中 `searchZhihuContent` 增加 `AbortController`，避免 API 挂起时前端长时间无响应。
