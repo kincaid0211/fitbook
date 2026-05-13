@@ -282,6 +282,10 @@ git push fitbook master
   - Admin 配置页：标题和说明文案软化，去除技术 jargon。
   - 修复异步处理期间页面仍可交互的问题：新增 `isBusy()` 统一状态判断，全局导航、起点页输入/按钮/热榜卡片、探索页方向按钮/装订/重启/弹窗按钮在 loading 期间统一禁用并拦截事件，防止重复提交和竞态操作。
 - 重新生成 `dist/demo.html`。
+- **AI 思考模态框升级**：将 AI 处理期间的"全局禁用按钮"方案升级为全屏思考模态框，按 start/directions/candidates/choose/book/cover 六个阶段展示趣味文案轮播、spinner 动画和已等待秒数，backdrop 阻断交互，按钮无需再禁用。
+  - `src/app.js` 新增 `thinkingQuotes` 数据与 `showThinkingModal` / `hideThinkingModal` / `startQuoteRotation` / `updateThinkingTimer` 等函数；`setBusy` / `clearBusy` / `setError` / `update` 统一调用 modal 生命周期；移除所有渲染层的 `disabled` 和状态 banner。
+  - `src/styles.css` 追加 `.thinking-modal-backdrop`、`.thinking-modal`、`.thinking-spinner` 及 fadeIn / slideUp / spin / bounce 动画关键帧。
+  - 重新生成 `dist/demo.html`。
 
 ### 2026-05-12
 

@@ -5,6 +5,9 @@ const libraryKey = "feishu-library";
 const aiConfigStorageKey = "feishu-ai-node-config";
 const logoSrc = window.FEISHU_LOGO_SRC || "assets/feishu-logo.png";
 let loadingTimer = null;
+let thinkingModalEl = null;
+let quoteTimer = null;
+let thinkingQuoteIndex = 0;
 
 const featuredStarts = [
   {
@@ -154,6 +157,15 @@ const sampleBooks = [
   },
 ];
 
+const thinkingQuotes = {
+  start: ["正在从字里行间提取知识的种子…", "你的文章很有趣，AI 已经读了两遍了…", "正在为你的阅读之旅绘制第一张地图…", "正在品味文字之间的隐藏线索…"],
+  directions: ["正在对比不同观点的交汇点…", "你的兴趣画像正在实时更新…", "正在寻找那些能打开新视野的角度…", "正在思考：如果换一位作者，会怎么写？"],
+  candidates: ["正在知乎的海量内容中打捞最闪亮的珍珠…", "AI 正在和优质内容双向奔赴…", "已经排除了 97% 的无关内容…", "正在对比三篇不同风格的文章，看谁最适合你…"],
+  choose: ["正在把零散的知识点编织成连续的思考…", "知识桥正在浇筑中，请稍候…", "正在预测你读完这一章后会想到什么新问题…", "正在搭建从上一章到下一章的思维阶梯…"],
+  book: ["正在为你的非书挑选最合适的封面风格…", "序言正在由 AI 作家亲笔撰写…", "每一本非书都是独一无二的，你的也是…", "正在把章节按照阅读线索重新排序…"],
+  cover: ["正在把阅读的主题翻译成视觉语言…", "配色方案正在调色盘上旋转…", "一本好书的封面，是它第一次对你说话…", "正在构思一个能代表你阅读品味的画面…"],
+};
+
 function uniqueAuthors(steps) {
   return [...new Set(steps.map((step) => step.author))];
 }
@@ -212,19 +224,93 @@ async function fetchHotList(refresh = false) {
   render();
 }
 
+function getThinkingPhase(message) {
+  if (!message) return "start";
+  if (message.includes("读你的第一篇文章") || message.includes("解析")) return "start";
+  if (message.includes("方向")) return "directions";
+  if (message.includes("找") && message.includes("文章")) return "candidates";
+  if (message.includes("导读") || message.includes("知识桥") || message.includes("下一章")) return "choose";
+  if (message.includes("装订")) return "book";
+  if (message.includes("封面")) return "cover";
+  return "start";
+}
+
+function pickQuote(phase, index = 0) {
+  const list = thinkingQuotes[phase] || thinkingQuotes.start;
+  return list[index % list.length];
+}
+
+function showThinkingModal(message) {
+  if (thinkingModalEl) return;
+  const phase = getThinkingPhase(message);
+  thinkingQuoteIndex = 0;
+  const quote = pickQuote(phase, 0);
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "thinking-modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="thinking-modal" role="dialog" aria-modal="true" aria-live="polite">
+      <div class="thinking-spinner">
+        <div class="thinking-ring"></div>
+        <div class="thinking-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div class="thinking-title">AI 正在思考</div>
+      <div class="thinking-quote-wrap">
+        <div class="thinking-quote" id="thinking-quote">${quote}</div>
+      </div>
+      <div class="thinking-timer" id="thinking-timer">已用时 0 秒</div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+  thinkingModalEl = backdrop;
+  startQuoteRotation(phase);
+}
+
+function hideThinkingModal() {
+  stopQuoteRotation();
+  if (thinkingModalEl) {
+    thinkingModalEl.remove();
+    thinkingModalEl = null;
+  }
+}
+
+function updateThinkingTimer(seconds) {
+  const el = document.getElementById("thinking-timer");
+  if (el) el.textContent = `已用时 ${seconds} 秒`;
+}
+
+function startQuoteRotation(phase) {
+  if (quoteTimer) clearInterval(quoteTimer);
+  quoteTimer = setInterval(() => {
+    thinkingQuoteIndex++;
+    const quote = pickQuote(phase, thinkingQuoteIndex);
+    const el = document.getElementById("thinking-quote");
+    if (el) {
+      el.style.opacity = "0";
+      setTimeout(() => {
+        el.textContent = quote;
+        el.style.opacity = "1";
+      }, 300);
+    }
+  }, 5000);
+}
+
+function stopQuoteRotation() {
+  if (quoteTimer) clearInterval(quoteTimer);
+  quoteTimer = null;
+}
+
 function setBusy(message) {
   if (loadingTimer) clearInterval(loadingTimer);
   state.loading = message;
   state.loadingStartedAt = Date.now();
   state.error = "";
+  showThinkingModal(message);
   render();
   loadingTimer = setInterval(() => {
-    if (!state.loading) {
-      clearInterval(loadingTimer);
-      loadingTimer = null;
-      return;
-    }
-    render();
+    if (!state.loading) { clearInterval(loadingTimer); loadingTimer = null; return; }
+    const seconds = state.loadingStartedAt ? Math.round((Date.now() - state.loadingStartedAt) / 1000) : 0;
+    updateThinkingTimer(seconds);
   }, 1000);
 }
 
@@ -234,6 +320,7 @@ function setError(error) {
   state.loading = "";
   state.loadingStartedAt = null;
   state.error = error.message || "网络有点问题，请稍后再试。已读过的章节不会丢失。";
+  hideThinkingModal();
   render();
 }
 
@@ -242,6 +329,7 @@ function clearBusy() {
   loadingTimer = null;
   state.loading = "";
   state.loadingStartedAt = null;
+  hideThinkingModal();
 }
 
 function isBusy() {
@@ -425,6 +513,7 @@ function update(partial) {
     if (loadingTimer) clearInterval(loadingTimer);
     loadingTimer = null;
     state.loadingStartedAt = null;
+    hideThinkingModal();
   }
   render();
   if ((partial.view && partial.view !== previousView) || Object.prototype.hasOwnProperty.call(partial, "currentIndex")) {
@@ -510,15 +599,7 @@ async function chooseDirection(direction) {
   }
 
   try {
-    Object.assign(state, {
-      selectedDirection: direction,
-      selectedCandidate: null,
-      candidates: [],
-      loading: "正在找适合下一章的文章...",
-      loadingStartedAt: Date.now(),
-      error: "",
-    });
-    render();
+    setBusy("正在找适合下一章的文章...");
     const data = await apiPost("/api/candidates", {
       currentStep: state.route[state.currentIndex],
       direction,
@@ -566,15 +647,7 @@ async function goNext() {
 
   try {
     const selectedCandidate = state.selectedCandidate;
-    Object.assign(state, {
-      selectedDirection: null,
-      selectedCandidate: null,
-      candidates: [],
-      loading: "正在写下一章的导读，并想想再往后可以怎么走...",
-      loadingStartedAt: Date.now(),
-      error: "",
-    });
-    render();
+    setBusy("正在写下一章的导读，并想想再往后可以怎么走...");
     const data = await apiPost("/api/choose", {
       previousStep: state.route[state.currentIndex],
       candidate: selectedCandidate,
@@ -588,6 +661,7 @@ async function goNext() {
       nextRoute[nextIndex].directions = data.directions;
     }
 
+    clearBusy();
     Object.assign(state, {
       currentIndex: nextIndex,
       route: nextRoute,
@@ -709,13 +783,13 @@ async function finishBook() {
 function nav(active) {
   return `
     <nav class="topbar">
-      <button class="brand-button" data-view="landing" aria-label="非书首页" ${isBusy() ? "disabled" : ""}><img class="brand-logo" src="${logoSrc}" alt="非书" /><span>读出自己的书。</span></button>
+      <button class="brand-button" data-view="landing" aria-label="非书首页"><img class="brand-logo" src="${logoSrc}" alt="非书" /><span>读出自己的书。</span></button>
       <div class="nav-links">
-        <button class="${active === "landing" ? "active" : ""}" data-view="landing" ${isBusy() ? "disabled" : ""}>首页</button>
-        <button class="${active === "start" ? "active" : ""}" data-view="start" ${isBusy() ? "disabled" : ""}>开始探索</button>
-        <button class="${active === "library" ? "active" : ""}" data-view="library" ${isBusy() ? "disabled" : ""}>我的非书</button>
+        <button class="${active === "landing" ? "active" : ""}" data-view="landing">首页</button>
+        <button class="${active === "start" ? "active" : ""}" data-view="start">开始探索</button>
+        <button class="${active === "library" ? "active" : ""}" data-view="library">我的非书</button>
       </div>
-      <button class="nav-cta" data-view="start" ${isBusy() ? "disabled" : ""}>开始第一本非书</button>
+      <button class="nav-cta" data-view="start">开始第一本非书</button>
     </nav>
   `;
 }
@@ -934,22 +1008,21 @@ function renderStart() {
         <form class="start-panel" id="start-form">
           <label for="url-input">文章链接</label>
           <div class="input-row">
-            <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意文章链接" ${isBusy() ? "disabled" : ""} />
-            <button type="submit" ${isBusy() ? "disabled" : ""}>开始读非书</button>
+            <input id="url-input" type="url" value="${state.inputUrl}" placeholder="https://www.zhihu.com/question/... 或任意文章链接" />
+            <button type="submit">开始读非书</button>
           </div>
           <div class="paste-block">
             <label for="article-input">或者，直接粘贴正文</label>
-            <textarea id="article-input" rows="5" placeholder="粘贴标题、摘要或正文片段，也可以只放你最有感觉的一段。" ${isBusy() ? "disabled" : ""}>${state.articleText}</textarea>
+            <textarea id="article-input" rows="5" placeholder="粘贴标题、摘要或正文片段，也可以只放你最有感觉的一段。">${state.articleText}</textarea>
           </div>
           <p class="${detected.ok ? "hint good" : "hint"}">${detected.ok ? `已识别：${detected.label}` : state.selectedDirection || detected.label}</p>
-          ${state.loading ? `<p class="status-message">${loadingText()}</p>` : ""}
           ${state.error ? `<p class="error-message">${state.error}</p>` : ""}
           <div class="start-ai-notes">
             <span>AI 帮你提炼主题</span>
             <span>推荐知乎优质内容</span>
             <span>三章即可成书</span>
           </div>
-          <button class="ghost-button demo-route-button" type="button" id="demo-route-button" ${isBusy() ? "disabled" : ""}>先看一段示例旅程</button>
+          <button class="ghost-button demo-route-button" type="button" id="demo-route-button">先看一段示例旅程</button>
 
           <div class="featured-starts">
             <style>
@@ -978,7 +1051,7 @@ function renderStart() {
             ${state.hotListError ? `<div class="hotlist-error">${state.hotListError}</div>` : ""}
             <div class="featured-grid">
               ${state.hotList.map((item, index) => `
-                <button class="featured-card" type="button" data-hot-index="${index}" ${isBusy() ? "disabled" : ""}>
+                <button class="featured-card" type="button" data-hot-index="${index}">
                   <span class="tag">${item.tag}</span>
                   <h4>${item.title}</h4>
                   <p>${item.excerpt}</p>
@@ -1088,7 +1161,7 @@ function renderCandidateModal(candidates, selectedDirectionText) {
   return `
     <div class="modal-backdrop" role="presentation">
       <section class="chapter-modal" role="dialog" aria-modal="true" aria-labelledby="chapter-modal-title">
-        <button class="modal-close" id="candidate-modal-close" type="button" aria-label="关闭选择下一章" ${isBusy() ? "disabled" : ""}>×</button>
+        <button class="modal-close" id="candidate-modal-close" type="button" aria-label="关闭选择下一章">×</button>
         <header class="chapter-modal-header">
           <div>
             <p class="eyebrow">选择下一章</p>
@@ -1100,7 +1173,7 @@ function renderCandidateModal(candidates, selectedDirectionText) {
           ${candidates
             .map(
               (candidate, index) => `
-                <button class="chapter-choice ${state.selectedCandidate?.title === candidate.title ? "selected" : ""}" type="button" data-candidate="${index}" role="radio" aria-checked="${state.selectedCandidate?.title === candidate.title}" ${isBusy() ? "disabled" : ""}>
+                <button class="chapter-choice ${state.selectedCandidate?.title === candidate.title ? "selected" : ""}" type="button" data-candidate="${index}" role="radio" aria-checked="${state.selectedCandidate?.title === candidate.title}">
                   <div class="signal-row">${candidateSignals(candidate)}</div>
                   <strong>${candidateTitle(candidate)}</strong>
                   <p><b>这一章怎么接上前文：</b>${candidate.connection || candidate.bridgePreview || "它能接住当前章节留下的问题，继续推进这本非书的阅读线索。"}</p>
@@ -1115,8 +1188,8 @@ function renderCandidateModal(candidates, selectedDirectionText) {
             .join("")}
         </div>
         <footer class="chapter-modal-actions">
-          <button class="ghost-button" id="change-direction-button" type="button" ${isBusy() ? "disabled" : ""}>换一个方向</button>
-          <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidate ? "" : "disabled"} ${isBusy() ? "disabled" : ""}>确定，进入下一章</button>
+          <button class="ghost-button" id="change-direction-button" type="button">换一个方向</button>
+          <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidate ? "" : "disabled"}>确定，进入下一章</button>
         </footer>
       </section>
     </div>
@@ -1140,11 +1213,10 @@ function renderAdventure() {
           <p class="header-subtitle">${canFinishEarly ? `这本书已经有 ${state.route.length} 章了，现在就可以装订。当然，你也可以继续读下去。` : `再读 ${3 - state.route.length} 章，就可以装订成书了。`}</p>
         </div>
         <div class="header-actions">
-          ${canFinishEarly && !state.finished ? `<button class="ghost-button" id="early-book-button" ${isBusy() ? "disabled" : ""}>装订这本非书</button>` : ""}
-          <button class="ghost-button" id="restart-button" ${isBusy() ? "disabled" : ""}>另起一本</button>
+          ${canFinishEarly && !state.finished ? `<button class="ghost-button" id="early-book-button">装订这本非书</button>` : ""}
+          <button class="ghost-button" id="restart-button">另起一本</button>
         </div>
       </header>
-      ${state.loading ? `<div class="status-banner">${loadingText()}</div>` : ""}
       ${state.error ? `<div class="error-banner">${state.error}</div>` : ""}
       <section class="chapter-status" aria-label="成书状态">
         <div class="chapter-marks">
@@ -1219,7 +1291,7 @@ function renderAdventure() {
                 ? `<div class="direction-list chapter-direction-list">${step.directions
                     .map(
                       (direction, index) => `
-                        <button class="direction ${selectedDirectionText === directionTitle(direction) || selectedDirectionText === direction.text ? "selected" : ""}" type="button" data-index="${index}" ${isBusy() ? "disabled" : ""}>
+                        <button class="direction ${selectedDirectionText === directionTitle(direction) || selectedDirectionText === direction.text ? "selected" : ""}" type="button" data-index="${index}">
                           <span>${direction.label}</span>
                           <strong>${direction.text}</strong>
                           ${direction.reason ? `<small>${direction.reason}</small>` : ""}
@@ -1232,7 +1304,7 @@ function renderAdventure() {
                   : canFinishEarly
                     ? `<div class="empty-next-step">
                         <p>这本书已经可以装订了。你也可以继续读，把它写得更厚。</p>
-                        <button id="book-button" class="primary-wide" type="button" ${isBusy() ? "disabled" : ""}>装订这本非书</button>
+                        <button id="book-button" class="primary-wide" type="button">装订这本非书</button>
                       </div>`
                     : `<div class="empty-next-step"><p>暂时没有找到方向。你可以稍后再试，或另起一本非书。</p></div>`
             }
@@ -1452,6 +1524,7 @@ function renderLibrary() {
 }
 
 function render() {
+  if (!state.loading && thinkingModalEl) { hideThinkingModal(); }
   if (state.view === "landing") renderLanding();
   else if (state.view === "start") renderStart();
   else if (state.view === "library") renderLibrary();
