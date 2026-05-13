@@ -230,9 +230,9 @@ function render() {
     <section class="admin-screen">
       <header class="admin-header">
         <div>
-          <p class="eyebrow">非书后台配置</p>
-          <h1>AI 节点与模型配置</h1>
-          <p class="lead">这里单独配置每个 AI 节点的模型、温度、超时和完整提示词。配置保存在当前浏览器本地，不会写入主项目页面。</p>
+          <p class="eyebrow">非书 · 模型与提示词配置</p>
+          <h1>AI 配置</h1>
+          <p class="lead">调整不同 AI 环节的模型、温度和提示词。配置仅保存在当前浏览器，用于调试和演示。</p>
           <p class="model-status">
             <span class="status-badge ${state.modelListLoading ? "loading" : state.modelLists.siliconflow?.length ? "ok" : "warn"}">
               ${state.modelListLoading ? "⏳" : state.modelLists.siliconflow?.length ? "✓" : "⚠"}
@@ -251,9 +251,9 @@ function render() {
       </header>
       <section class="section-block">
         <div class="feature-grid">
-          <article><span class="feature-icon">快</span><strong>轻量节点</strong><p>起点理解、方向生成、封面方案建议使用更快模型。</p></article>
-          <article><span class="feature-icon">深</span><strong>深度节点</strong><p>章节知识桥、最终非书可以保留更强模型。</p></article>
-          <article><span class="feature-icon">稳</span><strong>失败可见</strong><p>节点失败会反馈给用户，不再像页面卡死。</p></article>
+          <article><span class="feature-icon">快</span><strong>快速节点</strong><p>起点理解、方向推荐等轻量任务，可用更快模型。</p></article>
+          <article><span class="feature-icon">深</span><strong>深度节点</strong><p>章节导读、非书装订等需要质量的任务，建议用更强模型。</p></article>
+          <article><span class="feature-icon">稳</span><strong>失败有提示</strong><p>AI 调用失败会明确提示，不会无限等待。</p></article>
         </div>
       </section>
       <section class="node-grid">

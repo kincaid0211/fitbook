@@ -1949,6 +1949,45 @@ const aiConfigStorageKey = "feishu-ai-node-config";
 const logoSrc = window.FEISHU_LOGO_SRC || "assets/feishu-logo.png";
 let loadingTimer = null;
 
+const featuredStarts = [
+  {
+    title: "为什么古典音乐听起来比流行音乐更高级？",
+    url: "https://www.zhihu.com/question/20337986",
+    tag: "音乐",
+    excerpt: "从审美标准、历史语境到个人经验，重新审视「高级」这个概念本身。",
+  },
+  {
+    title: "如何突破自己的认知茧房？",
+    url: "https://www.zhihu.com/question/316418287",
+    tag: "认知",
+    excerpt: "信息闭环是如何形成的，又有哪些方法可以让你看到更大的世界。",
+  },
+  {
+    title: "人工智能会取代人类的工作吗？",
+    url: "https://www.zhihu.com/question/275171402",
+    tag: "AI",
+    excerpt: "技术替代与能力迁移，从历次技术革命看工作形态的演变。",
+  },
+  {
+    title: "为什么人会陷入抑郁？",
+    url: "https://www.zhihu.com/question/20127628",
+    tag: "心理学",
+    excerpt: "从神经科学、社会环境到个人叙事，理解情绪背后的多层机制。",
+  },
+  {
+    title: "什么是好的公共讨论？",
+    url: "https://www.zhihu.com/question/22529930",
+    tag: "社会",
+    excerpt: "事实、观点与情绪在公共议题中如何共存与博弈。",
+  },
+  {
+    title: "如何培养深度工作的能力？",
+    url: "https://www.zhihu.com/question/28420609",
+    tag: "成长",
+    excerpt: "注意力经济的对立面，重新夺回对时间和心智的控制权。",
+  },
+];
+
 const state = {
   view: "landing",
   currentIndex: 0,
@@ -1965,6 +2004,10 @@ const state = {
   articleText: "",
   finished: false,
   activeBook: null,
+  hotList: featuredStarts,
+  hotListLoading: false,
+  hotListError: "",
+  hotListLoaded: false,
 };
 
 const authorProfiles = [
@@ -2054,45 +2097,6 @@ const sampleBooks = [
   },
 ];
 
-const featuredStarts = [
-  {
-    title: "为什么古典音乐听起来比流行音乐更高级？",
-    url: "https://www.zhihu.com/question/20337986",
-    tag: "音乐",
-    excerpt: "从审美标准、历史语境到个人经验，重新审视「高级」这个概念本身。",
-  },
-  {
-    title: "如何突破自己的认知茧房？",
-    url: "https://www.zhihu.com/question/316418287",
-    tag: "认知",
-    excerpt: "信息闭环是如何形成的，又有哪些方法可以让你看到更大的世界。",
-  },
-  {
-    title: "人工智能会取代人类的工作吗？",
-    url: "https://www.zhihu.com/question/275171402",
-    tag: "AI",
-    excerpt: "技术替代与能力迁移，从历次技术革命看工作形态的演变。",
-  },
-  {
-    title: "为什么人会陷入抑郁？",
-    url: "https://www.zhihu.com/question/20127628",
-    tag: "心理学",
-    excerpt: "从神经科学、社会环境到个人叙事，理解情绪背后的多层机制。",
-  },
-  {
-    title: "什么是好的公共讨论？",
-    url: "https://www.zhihu.com/question/22529930",
-    tag: "社会",
-    excerpt: "事实、观点与情绪在公共议题中如何共存与博弈。",
-  },
-  {
-    title: "如何培养深度工作的能力？",
-    url: "https://www.zhihu.com/question/28420609",
-    tag: "成长",
-    excerpt: "注意力经济的对立面，重新夺回对时间和心智的控制权。",
-  },
-];
-
 function uniqueAuthors(steps) {
   return [...new Set(steps.map((step) => step.author))];
 }
@@ -2127,6 +2131,28 @@ function readAiConfig() {
   } catch {
     return {};
   }
+}
+
+async function fetchHotList(refresh = false) {
+  if (state.hotListLoading) return;
+  state.hotListLoading = true;
+  state.hotListError = "";
+  render();
+
+  try {
+    const url = refresh ? "/api/hotlist?refresh=1" : "/api/hotlist";
+    const response = await fetch(url);
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.message || "获取热榜失败。");
+    }
+    state.hotList = (data.items || []).length ? data.items : state.hotList;
+    state.hotListLoading = false;
+  } catch (error) {
+    state.hotListError = error.message || "获取热榜失败。";
+    state.hotListLoading = false;
+  }
+  render();
 }
 
 function setBusy(message) {
@@ -2801,6 +2827,12 @@ function renderLanding() {
 
 function renderStart() {
   const detected = detectStartInput(state.inputUrl, state.articleText);
+
+  if (!state.hotListLoaded) {
+    state.hotListLoaded = true;
+    fetchHotList();
+  }
+
   app.innerHTML = `
     <section class="screen start-screen">
       ${nav("start")}
@@ -2833,20 +2865,31 @@ function renderStart() {
           <div class="featured-starts">
             <style>
               .featured-starts { margin-top: 2.5rem; }
-              .featured-starts-heading { font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; text-align: center; }
+              .featured-starts-header { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1rem; }
+              .featured-starts-heading { font-size: 0.875rem; color: #64748b; margin: 0; }
+              .refresh-hotlist { font-size: 0.75rem; padding: 0.25rem 0.625rem; background: #f1f5f9; color: #475569; border: none; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; }
+              .refresh-hotlist:hover { background: #e2e8f0; color: #2563eb; }
+              .refresh-hotlist:disabled { opacity: 0.5; cursor: not-allowed; }
               .featured-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
               .featured-card { padding: 1rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #fff; cursor: pointer; transition: all 0.2s; text-align: left; }
               .featured-card:hover { border-color: #2563eb; box-shadow: 0 4px 12px rgba(37,99,235,0.08); transform: translateY(-2px); }
               .featured-card .tag { display: inline-block; font-size: 0.75rem; padding: 0.25rem 0.5rem; background: #eff6ff; color: #2563eb; border-radius: 999px; margin-bottom: 0.5rem; font-weight: 500; }
               .featured-card h4 { font-size: 0.9375rem; margin: 0 0 0.375rem; color: #0f172a; line-height: 1.4; }
               .featured-card p { font-size: 0.8125rem; color: #64748b; margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+              .hotlist-error { text-align: center; color: #ef4444; font-size: 0.875rem; padding: 0.5rem 0; }
               @media (max-width: 768px) { .featured-grid { grid-template-columns: repeat(2, 1fr); } }
               @media (max-width: 480px) { .featured-grid { grid-template-columns: 1fr; } }
             </style>
-            <p class="featured-starts-heading">或从热门起点开始</p>
+            <div class="featured-starts-header">
+              <p class="featured-starts-heading">或从知乎热榜开始</p>
+              <button class="refresh-hotlist" type="button" id="refresh-hotlist" ${state.hotListLoading ? "disabled" : ""}>
+                ${state.hotListLoading ? "刷新中..." : "刷新"}
+              </button>
+            </div>
+            ${state.hotListError ? `<div class="hotlist-error">${state.hotListError}</div>` : ""}
             <div class="featured-grid">
-              ${featuredStarts.map((item, index) => `
-                <button class="featured-card" type="button" data-featured-index="${index}">
+              ${state.hotList.map((item, index) => `
+                <button class="featured-card" type="button" data-hot-index="${index}">
                   <span class="tag">${item.tag}</span>
                   <h4>${item.title}</h4>
                   <p>${item.excerpt}</p>
@@ -2869,10 +2912,11 @@ function renderStart() {
   });
   document.querySelector("#start-form").addEventListener("submit", startAdventure);
   document.querySelector("#demo-route-button").addEventListener("click", startDemoAdventure);
+  document.querySelector("#refresh-hotlist")?.addEventListener("click", () => fetchHotList(true));
   document.querySelectorAll(".featured-card").forEach((card) => {
     card.addEventListener("click", () => {
-      const index = Number(card.dataset.featuredIndex);
-      const item = featuredStarts[index];
+      const index = Number(card.dataset.hotIndex);
+      const item = state.hotList[index];
       if (item?.url) {
         state.inputUrl = item.url;
         startAdventure();

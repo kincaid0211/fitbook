@@ -41,6 +41,7 @@
 │   ├── choose.js                     # 生成章节导读和知识桥（已合并下一章方向）
 │   ├── cover.js                      # 生成 AI 封面方案
 │   ├── directions.js                 # 生成下一章方向
+│   ├── hotlist.js                    # 拉取知乎热榜内容
 │   ├── models.js                     # 拉取硅基流动可用模型列表
 │   └── start.js                      # 解析起点并生成起点理解
 ├── assets/
@@ -267,6 +268,9 @@ git push fitbook master
   - `cover` 改为 `deepseek-ai/DeepSeek-V4-Flash`（封面方案输出结构简单，用轻量模型极低成本且响应最快）。
 - 重新设计落地页使用方法引导：将原独立的"如何使用非书"和 Bookmarklet 区块整合为"3 种方式，开启你的非书"卡片组（粘贴链接/文本、精选起点、Bookmarklet），置于 hero 正下方最显眼位置；4 步流程改为水平时间线（圆形序号 + 连接线），桌面端一眼看清完整路径；移动端自动转为垂直布局。
 - 新增端到端测试脚本 `scripts/test-entry-features.mjs`，用 JSDOM 验证 URL 参数预填充、精选起点卡片渲染、Bookmarklet 协议和参数触发逻辑，12 项测试全部通过。
+- 新增 `/api/hotlist`：代理知乎热榜内容，返回 6 条标准化条目（title/url/tag/excerpt），支持 `?refresh=1` 跳过缓存。
+- 起点页热门起点改为实时拉取知乎热榜，展示 6 条热榜内容并支持刷新按钮；加载失败时自动回落到原有精选起点。
+- 重新生成 `dist/demo.html`。
 
 ### 2026-05-12
 
