@@ -53,7 +53,7 @@ const state = {
   currentIndex: 0,
   route: [adventure.steps[0]],
   selectedDirection: null,
-  selectedCandidate: null,
+  selectedCandidateIndex: -1,
   candidates: [],
   interestProfile: {},
   loading: "",
@@ -582,7 +582,7 @@ function scrollToTop() {
 
 function navigate(view) {
   if (isBusy()) return;
-  update({ view, selectedDirection: null, selectedCandidate: null, activeBook: null });
+  update({ view, selectedDirection: null, selectedCandidateIndex: -1, activeBook: null });
 }
 
 async function startAdventure(event, hotItem = null, mode = 'auto') {
@@ -632,7 +632,7 @@ async function startAdventure(event, hotItem = null, mode = 'auto') {
       currentIndex: 0,
       route: [step],
       selectedDirection: null,
-      selectedCandidate: null,
+      selectedCandidateIndex: -1,
       candidates: [],
       interestProfile: data.interestProfile || {},
       finished: false,
@@ -655,7 +655,7 @@ function startDemoAdventure() {
     currentIndex: 0,
     route: [adventure.steps[0]],
     selectedDirection: null,
-    selectedCandidate: null,
+    selectedCandidateIndex: -1,
     candidates: [],
     interestProfile: {},
     finished: false,
@@ -672,7 +672,7 @@ async function chooseDirection(direction) {
   if (state.useDemo) {
     const nextStep = adventure.steps[state.currentIndex + 1];
     const candidates = candidateOptions(nextStep);
-    update({ selectedDirection: direction, selectedCandidate: candidates[0] || null, candidates });
+    update({ selectedDirection: direction, selectedCandidateIndex: 0, candidates });
     return;
   }
 
@@ -688,7 +688,7 @@ async function chooseDirection(direction) {
     update({
       selectedDirection: direction,
       candidates,
-      selectedCandidate: candidates[0] || null,
+      selectedCandidateIndex: candidates.length > 0 ? 0 : -1,
       loading: "",
       loadingStartedAt: null,
       error: "",
@@ -698,14 +698,15 @@ async function chooseDirection(direction) {
   }
 }
 
-function chooseCandidate(candidate) {
+function chooseCandidate(index) {
   if (isBusy()) return;
-  update({ selectedCandidate: candidate });
+  if (index === state.selectedCandidateIndex) return;
+  update({ selectedCandidateIndex: index });
 }
 
 function closeCandidateModal() {
   if (isBusy()) return;
-  update({ candidates: [], selectedCandidate: null, selectedDirection: null });
+  update({ candidates: [], selectedCandidateIndex: -1, selectedDirection: null });
 }
 
 async function goNext() {
@@ -716,16 +717,25 @@ async function goNext() {
       currentIndex: nextIndex,
       route: adventure.steps.slice(0, nextIndex + 1),
       selectedDirection: null,
-      selectedCandidate: null,
+      selectedCandidateIndex: -1,
       candidates: [],
     });
     return;
   }
 
-  if (!state.selectedCandidate) return;
+  if (state.selectedCandidateIndex < 0 || !state.candidates[state.selectedCandidateIndex]) return;
+
+  const selectedCandidate = state.candidates[state.selectedCandidateIndex];
+
+  // 先关闭候选弹窗，避免与 thinking modal 重叠
+  Object.assign(state, {
+    selectedDirection: null,
+    selectedCandidateIndex: -1,
+    candidates: [],
+  });
+  render();
 
   try {
-    const selectedCandidate = state.selectedCandidate;
     setBusy("正在写下一章的导读，并想想再往后可以怎么走...");
     const data = await apiPost("/api/choose", {
       previousStep: state.route[state.currentIndex],
@@ -746,7 +756,7 @@ async function goNext() {
       currentIndex: nextIndex,
       route: nextRoute,
       selectedDirection: null,
-      selectedCandidate: null,
+      selectedCandidateIndex: -1,
       candidates: [],
       interestProfile: data.interestProfile || state.interestProfile,
       loading: "",
@@ -771,7 +781,7 @@ function goNextMockPreview() {
     currentIndex: nextIndex,
     route: adventure.steps.slice(0, nextIndex + 1),
     selectedDirection: null,
-    selectedCandidate: null,
+    selectedCandidateIndex: -1,
   });
 }
 
@@ -782,7 +792,7 @@ function restart() {
     currentIndex: 0,
     route: [adventure.steps[0]],
     selectedDirection: null,
-    selectedCandidate: null,
+    selectedCandidateIndex: -1,
     candidates: [],
     interestProfile: {},
     inputUrl: "",
@@ -1240,7 +1250,7 @@ function confirmAnchorAndStart() {
     currentIndex: 0,
     route: [step],
     selectedDirection: null,
-    selectedCandidate: null,
+    selectedCandidateIndex: -1,
     candidates: [],
     interestProfile: data.interestProfile || {},
     finished: false,
@@ -1342,10 +1352,7 @@ function candidateGain(candidate) {
 
 function renderCandidateModal(candidates, selectedDirectionText) {
   if (!state.selectedDirection || !candidates || !candidates.length) return "";
-  const selectedIndex = Math.max(
-    0,
-    candidates.findIndex((candidate) => state.selectedCandidate?.title === candidate.title),
-  );
+  const selectedIndex = Math.max(0, state.selectedCandidateIndex);
   const selected = candidates[selectedIndex] || candidates[0];
   return `
     <div class="modal-backdrop" role="presentation">
@@ -1373,11 +1380,11 @@ function renderCandidateModal(candidates, selectedDirectionText) {
           ${candidates
             .map(
               (candidate, index) => `
-                <button class="chapter-choice ${state.selectedCandidate?.title === candidate.title ? "selected" : ""}" type="button" data-candidate="${index}" role="radio" aria-checked="${state.selectedCandidate?.title === candidate.title}">
+                <button class="chapter-choice ${index === state.selectedCandidateIndex ? "selected" : ""}" type="button" data-candidate="${index}" role="radio" aria-checked="${index === state.selectedCandidateIndex}">
                   <div class="choice-topline">
                     <span class="choice-index">${String(index + 1).padStart(2, "0")}</span>
                     <span class="choice-source">${escapeHtml(candidateSource(candidate))}</span>
-                    ${state.selectedCandidate?.title === candidate.title ? `<span class="selected-note">已选</span>` : ""}
+                    ${index === state.selectedCandidateIndex ? `<span class="selected-note">已选</span>` : ""}
                   </div>
                   <strong>${escapeHtml(candidateTitle(candidate))}</strong>
                   <p class="choice-brief">${escapeHtml(candidateBrief(candidate))}</p>
@@ -1395,7 +1402,7 @@ function renderCandidateModal(candidates, selectedDirectionText) {
         </div>
         <footer class="chapter-modal-actions">
           <button class="ghost-button" id="change-direction-button" type="button">换一个方向</button>
-          <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidate ? "" : "disabled"}>确定，进入下一章</button>
+          <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidateIndex >= 0 ? "" : "disabled"}>确定，进入下一章</button>
         </footer>
       </section>
     </div>
@@ -1408,7 +1415,7 @@ function renderAdventure() {
   const canFinishEarly = state.route.length >= 3;
   const candidates = state.useDemo ? state.candidates : state.candidates;
   const selectedDirectionText = directionTitle(state.selectedDirection) || directionText(state.selectedDirection);
-  const modalMarkup = renderCandidateModal(candidates, selectedDirectionText);
+  const modalMarkup = state.loading ? "" : renderCandidateModal(candidates, selectedDirectionText);
 
   app.innerHTML = `
     <section class="screen adventure-screen">
@@ -1535,16 +1542,10 @@ function renderAdventure() {
       chooseDirection(step.directions[Number(button.dataset.index)]);
     });
   });
-  document.querySelectorAll(".candidate-card").forEach((button) => {
-    button.addEventListener("click", () => {
-      if (isBusy()) return;
-      chooseCandidate(candidates[Number(button.dataset.candidate)]);
-    });
-  });
   document.querySelectorAll(".chapter-choice").forEach((button) => {
     button.addEventListener("click", () => {
       if (isBusy()) return;
-      chooseCandidate(candidates[Number(button.dataset.candidate)]);
+      chooseCandidate(Number(button.dataset.candidate));
     });
   });
   document.querySelector("#candidate-modal-close")?.addEventListener("click", () => {
