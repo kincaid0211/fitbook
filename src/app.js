@@ -895,118 +895,100 @@ function renderLanding() {
       ${nav("landing")}
       <div class="landing-hero hero-shell">
         <div class="hero-copy">
-          <p class="eyebrow">从一篇文章，读出自己的书</p>
-          <h1>读出自己的书。</h1>
-          <p class="lead">粘贴一篇文章或链接，AI 帮你选出下一章。读满三章，就是一本属于你自己的非书。</p>
+          <p class="eyebrow">知乎黑客松 Demo</p>
+          <h1><span>从一个知乎问题，</span><span>读出自己的非书。</span></h1>
+          <p class="lead">粘贴知乎链接、文章或一段文字，AI 帮你找到下一章；你选择方向，三章即可装订成一本文字、目录和封面都属于你的知识读本。</p>
           <div class="hero-actions">
             <button id="hero-start">开始第一本非书</button>
-            <button class="ghost-button" id="hero-library">看看示例</button>
+            <button class="ghost-button" id="hero-library">看一个示例</button>
           </div>
-          <div class="hero-meta">
-            <span>任意链接开始</span>
-            <span>每章由你选方向</span>
+          <div class="hero-proof" aria-label="产品特点">
+            <span>知乎内容起点</span>
+            <span>方向由你选择</span>
             <span>三章即可成书</span>
-            <span>随时保存分享</span>
           </div>
         </div>
-        <aside class="hero-book-preview">
-          ${coverMarkup(featured, "large")}
-          <div class="stat-stack">
-            <span><strong>3+</strong> 章即可成书</span>
-            <span><strong>${authorCount(featured)}</strong> 位作者</span>
-            <span><strong>${conceptCount(featured)}</strong> 个概念</span>
-            <span>可分享</span>
+        <aside class="landing-product-preview" aria-label="非书产品流程预览">
+          <div class="preview-card preview-origin">
+            <span class="preview-label">起点</span>
+            <strong>为什么古典音乐听起来比流行音乐更高级？</strong>
+            <p>AI 先提取问题里的概念、争议和可继续阅读的线索。</p>
+          </div>
+          <div class="preview-directions" aria-label="下一章方向示例">
+            <article>
+              <span>方向 1</span>
+              <strong>审美标准从哪里来</strong>
+            </article>
+            <article>
+              <span>方向 2</span>
+              <strong>音乐如何影响情绪</strong>
+            </article>
+            <article>
+              <span>方向 3</span>
+              <strong>品味背后的身份认同</strong>
+            </article>
+          </div>
+          <div class="preview-result">
+            <div class="preview-cover-wrap">${coverMarkup(featured)}</div>
+            <div>
+              <span class="preview-label">装订结果</span>
+              <strong>${featured.title}</strong>
+              <p>${featured.subtitle}</p>
+              <div class="preview-stats">
+                <span>${featured.steps.length} 章</span>
+                <span>${authorCount(featured)} 位作者</span>
+                <span>${conceptCount(featured)} 个概念</span>
+              </div>
+            </div>
           </div>
         </aside>
       </div>
 
-      <section class="section-block how-to-start">
+      <section class="section-block landing-steps-panel">
         <div class="section-heading">
-          <p class="eyebrow">随时开始</p>
-          <h2>选一种顺手的方式开始</h2>
-          <p class="section-intro">不用先想清楚整本书。把一个问题、一段文字或当前正在看的网页交给非书，它会帮你整理出第一批可探索的切口。</p>
+          <p class="eyebrow">三步开始</p>
+          <h2>不用先想清楚整本书，从一个好问题开始就够了。</h2>
         </div>
-        <div class="start-methods-grid">
-          <article class="start-method-card">
-            <div class="method-icon">01</div>
-            <strong>粘贴链接或文本</strong>
-            <p>输入任意文章链接，或直接粘贴标题、摘要和正文片段。支持知乎文章、回答、问题和任意网页。</p>
-            <div class="method-action">
-              <button class="ghost-button" data-view="start">去起点页</button>
-            </div>
+        <div class="landing-steps">
+          <article>
+            <span>01</span>
+            <strong>放入起点</strong>
+            <p>粘贴知乎问题、回答、文章链接，或直接放入一段正在触动你的文字。</p>
           </article>
-          <article class="start-method-card">
-            <div class="method-icon">02</div>
-            <strong>点击知乎热榜</strong>
-            <p>从实时热榜里挑一个正在发生的话题。适合快速体验，也适合把公共讨论读出自己的线索。</p>
-            <div class="method-action">
-              <button class="ghost-button" data-view="start">去起点页</button>
-            </div>
+          <article>
+            <span>02</span>
+            <strong>选择方向</strong>
+            <p>AI 提炼概念、争议和意外线索，你决定下一章要深入、转向还是拓宽。</p>
           </article>
-          <article class="start-method-card">
-            <div class="method-icon">03</div>
-            <strong>Bookmarklet 书签</strong>
-            <p>拖拽链接到浏览器书签栏。浏览任意网页时，一键跳转并自动带入当前页面链接。</p>
-            <div class="method-action">
-              <div class="bookmarklet-mini">
-                <a class="bookmarklet-link" id="bookmarklet-link" href="#">生成非书</a>
-                <span class="bookmarklet-hint">拖到书签栏后使用</span>
-              </div>
-            </div>
+          <article>
+            <span>03</span>
+            <strong>装订成书</strong>
+            <p>满三章生成封面、目录和序言，把零散阅读沉淀为一条清晰路径。</p>
           </article>
         </div>
       </section>
 
-      <section class="section-block landing-flow">
+      <section class="section-block zhihu-value-section">
         <div class="section-heading">
-          <p class="eyebrow">探索流程</p>
-          <h2>从一次好奇，到一本可分享的非书</h2>
-          <p class="section-intro">每一步都保留人的选择：AI 负责提炼和推荐，你负责决定这本书往哪里走。</p>
+          <p class="eyebrow">为知乎内容设计</p>
+          <h2>让优质讨论不止被收藏，而是继续长成你的思考。</h2>
         </div>
-        <div class="journey-steps">
-          <div class="journey-step">
-            <div class="journey-line"></div>
-            <div class="step-number">1</div>
-            <div>
-              <strong>放进第一篇文章</strong>
-              <p>粘贴链接或正文，这就是你非书的第 1 章。</p>
-            </div>
-          </div>
-          <div class="journey-step">
-            <div class="journey-line"></div>
-            <div class="step-number">2</div>
-            <div>
-              <strong>选择下一章方向</strong>
-              <p>深入、换个角度、或是意外发现，下一章往哪里走由你决定。</p>
-            </div>
-          </div>
-          <div class="journey-step">
-            <div class="journey-line"></div>
-            <div class="step-number">3</div>
-            <div>
-              <strong>挑选下一章</strong>
-              <p>从三篇文章里选一章加入你的非书，看看它如何接上前文。</p>
-            </div>
-          </div>
-          <div class="journey-step">
-            <div class="step-number">4</div>
-            <div>
-              <strong>装订成书</strong>
-              <p>满三章就可以生成封面、目录和序言，保存属于你的非书。</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section-block">
-        <div class="section-heading">
-          <p class="eyebrow">非书能做什么</p>
-          <h2>你值得用更主动的方式，读懂这个世界。</h2>
-        </div>
-        <div class="feature-grid" aria-label="核心玩法">
-          <article><span class="feature-icon">01</span><strong>从一个问题出发</strong><p>先理解你给出的文章，再提炼可继续探索的概念、争议和案例。</p></article>
-          <article><span class="feature-icon">02</span><strong>下一章，你来选</strong><p>AI 给出方向和推荐，你用选择把章节编成自己的样子。</p></article>
-          <article><span class="feature-icon">03</span><strong>读过的路，变成一本书</strong><p>写到 3 章即可装订，也可以继续加入新的章节。</p></article>
+        <div class="ecosystem-grid" aria-label="知乎生态价值">
+          <article>
+            <span>读者</span>
+            <strong>从刷到读</strong>
+            <p>把一次好奇变成连续阅读，不再让好答案停在收藏夹里。</p>
+          </article>
+          <article>
+            <span>创作者</span>
+            <strong>从讨论找选题</strong>
+            <p>沿着高质量回答、热榜和相近问题，发现更有依据的创作入口。</p>
+          </article>
+          <article>
+            <span>社区</span>
+            <strong>让内容重新连接</strong>
+            <p>把散落在知乎生态中的观点、作者和问题，组织成可分享的知识路径。</p>
+          </article>
         </div>
       </section>
 
@@ -1014,12 +996,27 @@ function renderLanding() {
         <div class="section-heading row">
           <div>
             <p class="eyebrow">示例</p>
-            <h2>看看别人读出了什么</h2>
+            <h2>示例非书</h2>
           </div>
-          <button class="ghost-button" id="sample-library">去书架看看</button>
+          <button class="ghost-button" id="sample-library">查看全部示例</button>
         </div>
-        <div class="shelf-grid">
+        <div class="shelf-grid landing-sample-grid">
           ${sampleBooks.slice(0, 3).map(bookCard).join("")}
+        </div>
+      </section>
+
+      <section class="section-block final-landing-cta">
+        <div>
+          <p class="eyebrow">现在开始</p>
+          <h2>从一个问题开始，读出你的第一本非书。</h2>
+          <p>可以使用知乎热榜、粘贴链接，也可以先用演示内容完整体验一次。</p>
+        </div>
+        <div class="final-cta-actions">
+          <button id="landing-final-start">开始第一本非书</button>
+          <div class="bookmarklet-mini desktop-only">
+            <a class="bookmarklet-link" id="bookmarklet-link" href="#">生成非书</a>
+            <span class="bookmarklet-hint">桌面端可拖到书签栏</span>
+          </div>
         </div>
       </section>
     </section>
@@ -1036,6 +1033,10 @@ function renderLanding() {
   document.querySelector("#sample-library").addEventListener("click", () => {
     if (isBusy()) return;
     navigate("library");
+  });
+  document.querySelector("#landing-final-start").addEventListener("click", () => {
+    if (isBusy()) return;
+    navigate("start");
   });
   const bookmarkletLink = document.querySelector("#bookmarklet-link");
   if (bookmarkletLink) {
@@ -1349,7 +1350,7 @@ function candidateGain(candidate) {
   );
 }
 
-function renderCandidateModal(candidates, selectedDirectionText) {
+function renderCandidateModal(candidates, selectedDirectionText, canFinishEarly = false) {
   if (!state.selectedDirection || !candidates || !candidates.length) return "";
   const selectedIndex = Math.max(0, state.selectedCandidateIndex);
   const selected = candidates[selectedIndex] || candidates[0];
@@ -1401,7 +1402,10 @@ function renderCandidateModal(candidates, selectedDirectionText) {
         </div>
         <footer class="chapter-modal-actions">
           <button class="ghost-button" id="change-direction-button" type="button">换一个方向</button>
-          <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidateIndex >= 0 ? "" : "disabled"}>确定，进入下一章</button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            ${canFinishEarly ? `<button class="ghost-button" id="modal-book-button" type="button">直接装订</button>` : ""}
+            <button class="primary-wide" id="next-button" type="button" ${state.selectedCandidateIndex >= 0 ? "" : "disabled"}>确定，进入下一章</button>
+          </div>
         </footer>
       </section>
     </div>
@@ -1414,7 +1418,7 @@ function renderAdventure() {
   const canFinishEarly = state.route.length >= 3;
   const candidates = state.useDemo ? state.candidates : state.candidates;
   const selectedDirectionText = directionTitle(state.selectedDirection) || directionText(state.selectedDirection);
-  const modalMarkup = state.loading ? "" : renderCandidateModal(candidates, selectedDirectionText);
+  const modalMarkup = state.loading ? "" : renderCandidateModal(candidates, selectedDirectionText, canFinishEarly);
 
   app.innerHTML = `
     <section class="screen adventure-screen">
@@ -1436,7 +1440,7 @@ function renderAdventure() {
             .map((count) => `<span class="${state.route.length >= count ? "complete" : ""} ${count === state.route.length ? "current" : ""}">第 ${count} 章</span>`)
             .join("")}
         </div>
-        <strong class="${canFinishEarly ? "book-ready" : "book-pending"}">第 ${state.route.length} 章 / 最多 10 章</strong>
+        <strong class="${canFinishEarly ? "book-ready" : "book-pending"}" ${canFinishEarly ? 'id="status-book-button" role="button" tabindex="0" aria-label="装订这本非书"' : ""}>第 ${state.route.length} 章 / 最多 10 章</strong>
       </section>
 
       <div class="chapter-layout">
@@ -1523,6 +1527,16 @@ function renderAdventure() {
           </section>
         </main>
       </div>
+      ${canFinishEarly && state.finished !== "book" ? `
+      <div class="adventure-footer-bar">
+        <div class="footer-bar-content">
+          <p>已有 ${state.route.length} 章，可以随时装订</p>
+          <div class="footer-bar-actions">
+            <button class="ghost-button" id="footer-book-button" type="button">装订这本非书</button>
+          </div>
+        </div>
+      </div>
+      ` : ""}
       ${modalMarkup}
     </section>
   `;
@@ -1560,6 +1574,25 @@ function renderAdventure() {
     goNext();
   });
   document.querySelector("#book-button")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    finishBook();
+  });
+  document.querySelector("#footer-book-button")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    finishBook();
+  });
+  document.querySelector("#status-book-button")?.addEventListener("click", () => {
+    if (isBusy()) return;
+    finishBook();
+  });
+  document.querySelector("#status-book-button")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (isBusy()) return;
+      finishBook();
+    }
+  });
+  document.querySelector("#modal-book-button")?.addEventListener("click", () => {
     if (isBusy()) return;
     finishBook();
   });
