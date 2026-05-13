@@ -168,7 +168,7 @@ npm run probe:global-search
 当前生产 Demo URL：
 
 ```text
-https://feishu-zhihu-hackathon.vercel.app
+https://flybook2.space
 ```
 
 Vercel 项目：
@@ -275,7 +275,8 @@ git push fitbook master
 - **重新设计非书详情页布局与信息层级**：移除右侧冗余的封面概念文字卡片，改为封面与核心信息居首、序言-目录-来源与作者依次排列的单列信息流布局（max-width 780px）；目录采用蓝圈章节索引 + 卡片式布局，hover 时有轻微上浮效果；清理重复的"来源与作者"独立卡片和"你的章节线索"时间线，减少信息冗余。
 - **修复详情页统计与标签展示**："15个概念"改为"个主题"（与 `book.tags` 对应），解决"概念"在页面中无展示上下文的问题；移除无效的"可读原文"标签；作者统计过滤掉"未知"和"user_text"等系统占位值。
 - **修复热榜进入知识卡片后无法继续的问题**：热榜卡片点击时同步清空 `state.articleText`，避免用户之前在文本框输入的残留文本被当作起点内容提交给后端，导致解析偏离热榜主题；`confirmAnchorAndStart` 中把静默 `return` 改为显式错误提示，防止状态丢失时用户面对无反应按钮。
-- **同步更新 Vercel 生产环境**：推送最新代码到 `fitbook/master` 后手动触发 `vercel --prod` 部署，生产地址 `https://feishu-zhihu-hackathon-l57d28d1v-kincaid0211-1062s-projects.vercel.app` 与自定义域名 `https://flybook2.space` 均已指向最新版本。
+- **优化装订按钮发现性**：探险页新增底部固定装订提示条（`.adventure-footer-bar`），滚动时始终停留在视口底部；第 5 站及以上的进度状态标签（`.book-ready`）改为可点击入口；候选弹窗底部新增「直接装订」按钮，支持在弹窗内一键完成成书；保留顶部原有装订按钮作为备用入口。
+- **同步更新 Vercel 生产环境**：commit `7d84741` 已推送 `fitbook/master` 并触发 `vercel --prod` 部署，自定义域名 `https://flybook2.space` 与最新 Vercel 生产地址均已指向最新版本。
 
 ### 2026-05-13
 
@@ -337,7 +338,7 @@ git push fitbook master
   - 书架页：标题改为「你的书架」；已保存区改为「你读过的非书」。
   - 加载与错误文案：全部改用 warmer tone，如「正在读你的第一篇文章…」「正在找适合下一章的文章…」「正在把你的阅读路线装订成书…」；通用错误增加「已读过的章节不会丢失」的安抚提示。
   - Admin 配置页：标题和说明文案软化，去除技术 jargon。
-  - 修复异步处理期间页面仍可交互的问题：新增 `isBusy()` 统一状态判断，全局导航、起点页输入/按钮/热榜卡片、探索页方向按钮/装订/重启/弹窗按钮在 loading 期间统一禁用并拦截事件，防止重复提交和竞态操作。
+- 修复异步处理期间页面仍可交互的问题：新增 `isBusy()` 统一状态判断，全局导航、起点页输入/按钮/热榜卡片、探索页方向按钮/装订/重启/弹窗按钮在 loading 期间统一禁用并拦截事件，防止重复提交和竞态操作。
 - 重新生成 `dist/demo.html`。
 - **AI 思考模态框升级**：将 AI 处理期间的"全局禁用按钮"方案升级为全屏思考模态框，按 start/directions/candidates/choose/book/cover 六个阶段展示趣味文案轮播、spinner 动画和已等待秒数，backdrop 阻断交互，按钮无需再禁用。
   - `src/app.js` 新增 `thinkingQuotes` 数据与 `showThinkingModal` / `hideThinkingModal` / `startQuoteRotation` / `updateThinkingTimer` 等函数；`setBusy` / `clearBusy` / `setError` / `update` 统一调用 modal 生命周期；移除所有渲染层的 `disabled` 和状态 banner。

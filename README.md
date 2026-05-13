@@ -49,7 +49,7 @@ The confirmed implementation plan uses Vercel as the official deployment target:
 **Production URLs:**
 
 - Custom domain: `https://flybook2.space`
-- Vercel default: `https://feishu-zhihu-hackathon.vercel.app`
+- Vercel default: `https://feishu-zhihu-hackathon-5wu2zu75d-kincaid0211-1062s-projects.vercel.app`
 
 Required environment variables:
 
