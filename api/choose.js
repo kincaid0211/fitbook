@@ -5,43 +5,16 @@ import {
   getNodeConfig,
   nodePrompt,
   buildChooseWithDirectionsUserPayload,
+  fallbackDirections,
 } from "../lib/prompts.js";
-
-function fallbackDirections(step) {
-  const concepts = Array.isArray(step.concepts) ? step.concepts : [];
-  const main = concepts[0] || step.title || "这一章";
-  return [
-    {
-      label: "继续深入",
-      text: `继续拆解「${main}」背后的关键问题`,
-      reason: "这一章已经给出清晰入口，继续深入能把概念、证据和判断关系读得更完整。",
-      zhihuQuery: main,
-      globalQuery: `${main} 背景`,
-      directionType: "深入",
-    },
-    {
-      label: "换个角度",
-      text: "寻找一个相邻视角，重新理解前面章节",
-      reason: "换一个视角能避免章节线索过早收窄，也能帮助用户判断这条线索是否真正成立。",
-      zhihuQuery: `${main} 争议`,
-      globalQuery: `${main} 不同观点`,
-      directionType: "观点挑战",
-    },
-    {
-      label: "回到生活",
-      text: "把这一章放回日常经验和具体案例",
-      reason: "回到生活能让抽象理解变得更容易使用，也让非书更适合继续阅读和分享。",
-      zhihuQuery: `${main} 案例`,
-      globalQuery: `${main} 应用`,
-      directionType: "回到生活",
-    },
-  ];
-}
 
 function fallbackChoosePayload(body) {
   const candidate = body?.candidate || {};
   const previousStep = body?.previousStep || {};
-  const concepts = (candidate.fitTags?.length ? candidate.fitTags : candidate.concepts || [])
+  const concepts = (candidate.fitTags?.length
+    ? candidate.fitTags
+    : candidate.concepts || []
+  )
     .filter(Boolean)
     .slice(0, 5);
   const title = candidate.curatedTitle || candidate.title || "新的章节";
@@ -53,6 +26,7 @@ function fallbackChoosePayload(body) {
     candidate.readerGain ||
     candidate.summary ||
     "这一章提供了一个可以继续阅读的入口，帮助你判断当前线索是否值得收入非书。";
+  const route = Array.isArray(body?.route) ? body.route : [];
   const step = {
     title,
     author: candidate.author || candidate.sourceLabel || candidate.source || "资料来源",
@@ -70,10 +44,10 @@ function fallbackChoosePayload(body) {
     fallback: true,
     step: {
       ...step,
-      directions: fallbackDirections(step),
+      directions: fallbackDirections(step, route.length, body?.interestProfile || {}),
     },
     bridge,
-    directions: fallbackDirections(step),
+    directions: fallbackDirections(step, route.length, body?.interestProfile || {}),
     interestProfile: body?.interestProfile || {},
     curatorMessage: "这一章已收入你的非书。",
     nextCuratorMessage: "你可以选择一个方向继续。",
@@ -95,6 +69,10 @@ export default async function handler(req, res) {
     };
     const route = Array.isArray(body.route) ? body.route : [];
     const isLastStep = route.length >= 9;
+    const chapterProgress = body.chapterProgress || {
+      currentIndex: route.length,
+      maxSteps: 10,
+    };
 
     const result = await callModelJson({
       system: nodePrompt(curatorSystem, nodeConfig),
@@ -105,12 +83,13 @@ export default async function handler(req, res) {
         route,
         interestProfile: body.interestProfile,
         isLastStep,
+        chapterProgress,
       }),
     });
 
     const data = result.data;
 
-    // 字段缺失容错补全：AI 漏字段时用 candidate / previousStep 信息填充
+    // 字段缺失容错补全
     if (!data.step) data.step = {};
     if (!data.step.title) data.step.title = body.candidate?.title || "下一章";
     if (!data.step.author) data.step.author = body.candidate?.author || body.candidate?.sourceLabel || "资料来源";
@@ -132,12 +111,12 @@ export default async function handler(req, res) {
 
     if (!isLastStep) {
       if (!Array.isArray(data.directions) || data.directions.length < 3) {
-        data.directions = fallbackDirections(data.step);
+        data.directions = fallbackDirections(data.step, route.length, body.interestProfile || {});
       }
       if (!data.nextCuratorMessage) data.nextCuratorMessage = "你可以选择一个方向继续。";
     }
 
-    // 最终校验：如果连 title 都没有，说明 AI 输出完全不可用，走 fallback
+    // 最终校验
     if (!data.step.title) {
       const error = new Error("AI 没有生成有效章节。");
       error.statusCode = 502;

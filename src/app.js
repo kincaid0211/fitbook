@@ -71,6 +71,7 @@ const state = {
   startData: null,
   knowledgeCards: [],
   selectedAnchor: null,
+  maxSteps: 10,
 };
 
 const authorProfiles = [
@@ -376,6 +377,7 @@ async function refreshDirections(step = state.route[state.route.length - 1]) {
     currentStep: step,
     route: state.route,
     interestProfile: state.interestProfile,
+    chapterProgress: { currentIndex: state.currentIndex, maxSteps: state.maxSteps },
   });
   step.directions = data.directions;
   state.interestProfile = data.interestProfile || state.interestProfile;
@@ -684,6 +686,7 @@ async function goNext() {
       candidate: selectedCandidate,
       route: state.route,
       interestProfile: state.interestProfile,
+      chapterProgress: { currentIndex: state.currentIndex, maxSteps: state.maxSteps },
     });
     const nextRoute = [...state.route, data.step];
     const nextIndex = nextRoute.length - 1;
