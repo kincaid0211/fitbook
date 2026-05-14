@@ -616,12 +616,18 @@ function showToast(message, duration = 2500) {
 }
 
 async function shareBook(book) {
-  const encoded = encodeBookForShare(book);
-  if (!encoded) {
-    showToast("生成分享链接失败，请重试");
-    return;
+  const id = await shareBookOnline(book);
+  let url;
+  if (id) {
+    url = `${window.location.origin}${window.location.pathname}#s=${id}`;
+  } else {
+    const encoded = await encodeBookForShare(book);
+    if (!encoded) {
+      showToast("生成分享链接失败，请重试");
+      return;
+    }
+    url = `${window.location.origin}${window.location.pathname}#book=${encoded}`;
   }
-  const url = `${window.location.origin}${window.location.pathname}#book=${encoded}`;
   try {
     await navigator.clipboard.writeText(url);
     showToast("分享链接已复制到剪贴板，快去分享给朋友吧！");
@@ -636,11 +642,18 @@ async function shareBook(book) {
   }
 }
 
-function buildPinContent(book) {
+async function buildPinContent(book) {
   const steps = book.steps || [];
   const toc = steps.slice(0, 5).map((s, i) => `${i + 1}. ${s.title}`).join("\n");
   const more = steps.length > 5 ? `\n...还有 ${steps.length - 5} 章` : "";
-  const url = `${window.location.origin}${window.location.pathname}#book=${encodeBookForShare(book) || ""}`;
+  const id = await shareBookOnline(book);
+  let url;
+  if (id) {
+    url = `${window.location.origin}${window.location.pathname}#s=${id}`;
+  } else {
+    const encoded = await encodeBookForShare(book);
+    url = `${window.location.origin}${window.location.pathname}#book=${encoded || ""}`;
+  }
   return `我在「非书」里读完了一本自己的知识读本：《${book.title}》\n\n${book.preface?.slice(0, 80) || ""}...\n\n目录：\n${toc}${more}\n\n来读我读出的这本非书 → ${url}`;
 }
 
@@ -662,6 +675,28 @@ async function shareToZhihuPin(book) {
   } catch (error) {
     clearBusy();
     showToast(error.message || "发布到知乎失败，请检查 API 配置或稍后重试。");
+  }
+}
+
+async function shareBookOnline(book) {
+  if (book._shareId) {
+    return book._shareId;
+  }
+  try {
+    const response = await fetch("/api/share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ book }),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.message || "创建分享失败。");
+    }
+    book._shareId = data.data.id;
+    return book._shareId;
+  } catch (error) {
+    console.error("shareBookOnline error:", error);
+    return null;
   }
 }
 
@@ -1893,7 +1928,7 @@ function render() {
   else renderAdventure();
 }
 
-function handleUrlParams() {
+async function handleUrlParams() {
   const params = new URLSearchParams(window.location.search);
   const urlParam = params.get("url");
   const textParam = params.get("text");
@@ -1910,7 +1945,28 @@ function handleUrlParams() {
   }
 
   const hash = window.location.hash;
-  const sharedBook = decodeSharedBook(hash);
+
+  // Try short share ID first
+  const shortPrefix = "#s=";
+  if (hash.startsWith(shortPrefix)) {
+    const id = hash.slice(shortPrefix.length);
+    if (id) {
+      try {
+        const response = await fetch(`/api/share/${id}`);
+        const data = await response.json().catch(() => null);
+        if (response.ok && data?.ok && data.data?.book) {
+          update({ view: "book", activeBook: data.data.book, isSharedView: true });
+          return true;
+        }
+      } catch {
+        /* ignore */
+      }
+      showToast("分享链接已过期或不存在");
+    }
+  }
+
+  // Fallback to legacy full-data hash
+  const sharedBook = await decodeSharedBook(hash);
   if (sharedBook) {
     update({ view: "book", activeBook: sharedBook, isSharedView: true });
     return true;
@@ -1919,6 +1975,7 @@ function handleUrlParams() {
   return false;
 }
 
-if (!handleUrlParams()) {
-  render();
-}
+handleUrlParams().then((handled) => {
+  if (!handled) render();
+});
+

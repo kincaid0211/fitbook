@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
-    "jsdom": "^24.0.0"
+    "@vercel/kv": "^2.0.0",
+    "jsdom": "^24.0.0",
+    "nanoid": "^5.1.11",
+    "qrcode-generator": "^2.0.4"
   }
 }

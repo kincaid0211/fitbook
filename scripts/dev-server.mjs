@@ -1,5 +1,6 @@
 import http from "node:http";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -17,8 +18,31 @@ const mimeTypes = {
 
 async function handleApi(req, res) {
   const apiPath = new URL(req.url || "/", `http://${host}:${port}`).pathname;
-  const fileName = `${apiPath.replace(/^\/api\//, "")}.js`;
-  const filePath = path.join(root, "api", fileName);
+  const routePath = apiPath.replace(/^\/api\//, "");
+
+  // Try exact match first
+  let filePath = path.join(root, "api", `${routePath}.js`);
+  req.query = {};
+
+  if (!fsSync.existsSync(filePath)) {
+    // Try dynamic route: e.g., share/Lpc-rAOE -> share/[id].js
+    const parts = routePath.split("/");
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const candidateParts = parts.slice(0, i).concat("[id]");
+      const candidate = candidateParts.join("/");
+      const candidatePath = path.join(root, "api", `${candidate}.js`);
+      if (fsSync.existsSync(candidatePath)) {
+        filePath = candidatePath;
+        // Extract dynamic param value from URL
+        const dynamicValue = parts[i];
+        if (dynamicValue) {
+          req.query.id = dynamicValue;
+        }
+        break;
+      }
+    }
+  }
+
   const mod = await import(`${pathToFileURL(filePath).href}?t=${Date.now()}`);
   await mod.default(req, res);
 }

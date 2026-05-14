@@ -3543,3 +3543,64 @@ h3 {
   font-weight: 800;
   line-height: 1.6;
 }
+
+/* ===== 二维码弹窗 ===== */
+.qr-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qr-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 26, 51, 0.45);
+  backdrop-filter: blur(4px);
+}
+.qr-modal-content {
+  position: relative;
+  z-index: 1;
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  text-align: center;
+  box-shadow: var(--shadow-lift);
+  max-width: 340px;
+  width: 90%;
+}
+.qr-modal-content h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: var(--ink);
+}
+.qr-code-wrap img {
+  display: block;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+.qr-hint {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.qr-close-button {
+  margin-top: 18px;
+  padding: 10px 28px;
+  border: none;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.qr-close-button:hover {
+  background: var(--blue-dark);
+}
+@media (max-width: 720px) {
+  .qr-modal-content {
+    padding: 22px 20px;
+  }
+}

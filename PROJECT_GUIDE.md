@@ -43,6 +43,8 @@
 │   ├── directions.js                 # 生成下一章方向
 │   ├── hotlist.js                    # 拉取知乎热榜内容
 │   ├── models.js                     # 拉取硅基流动可用模型列表
+│   ├── share.js                      # 创建短链接分享（在线存储非书数据）
+│   ├── share/[id].js                 # 通过短 ID 读取分享的非书数据
 │   └── start.js                      # 解析起点并生成起点理解
 ├── assets/
 │   ├── feishu-logo.png               # 非书横版品牌 Logo
@@ -66,6 +68,7 @@
 │   ├── model.js                      # Kimi/硅基流动 OpenAI 兼容模型调用（含缓存与分层）
 │   ├── parser.js                     # 网页正文解析
 │   ├── prompts.js                    # AI 策展人 system + 6 个节点 user payload 构造器
+│   ├── share-store.js                # Vercel KV 共享封装，含本地内存 fallback
 │   └── zhihu.js                      # 知乎内容 API 代理与字段标准化
 ├── scripts/
 │   ├── build-standalone.mjs          # 生成 dist/demo.html
@@ -262,6 +265,9 @@ git push fitbook master
 
 ### 2026-05-14
 
+- **在线存储分享落地**：非书数据通过 `POST /api/share` 存入服务端（Vercel KV），返回 8 位短 ID；分享链接缩短为 `#s=<id>`，解决旧版 `#book=` 长链接导致的短信截断和二维码过大问题。接收方访问 `#s=<id>` 时前端自动调用 `GET /api/share/<id>` 拉取完整非书数据并渲染只读详情页。旧版 `#book=` 压缩链接仍兼容，作为服务端不可用时降级回退。
+- **本地 dev server 支持动态路由**：`scripts/dev-server.mjs` 新增 `[id].js` 动态路由匹配（如 `share/abc123` → `share/[id].js`），并注入 `req.query.id`，实现本地开发与 Vercel 生产环境的路由行为一致。
+- **共享内存存储**：`lib/share-store.js` 封装 Vercel KV 读写，本地开发无 KV 凭证时自动回落到内存 Map；使用 `globalThis[Symbol.for("feishu.localShareStore")]` 确保 dev server 每次请求重新 import 模块时数据不丢失。移除本地 fallback 的 `setTimeout` TTL（30 天毫秒数超过 Node.js 32 位有符号整数上限导致数据瞬删）。
 - **重新设计落地页转化路径**：首页从“功能区块罗列”改为“首屏主张 + 产品流程预览 + 三步开始 + 知乎生态价值 + 示例非书 + 收束 CTA”的短路径结构，减少重复说明，强化“从一个知乎问题读出自己的非书”的第一眼吸引力。
 - **优化落地页 Web 与移动端体验**：首屏右侧新增起点、方向和装订结果的产品预览；移动端改为单列阅读结构，并取消小屏顶部导航 sticky，避免滚动时遮挡内容；保留桌面端 Bookmarklet 作为次级入口。
 - **优化书籍目录章节标题链接样式**：非书详情页目录中的章节标题链接新增 `.chapter-title-link` 专用样式，默认保持安静的目录阅读感，使用细下划线与轻量“读原文”胶囊提示，悬停/聚焦时再加强蓝色反馈；移动端允许提示换行，优先保证标题可读性。
