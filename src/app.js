@@ -72,6 +72,7 @@ const state = {
   knowledgeCards: [],
   selectedAnchor: null,
   maxSteps: 10,
+  isSharedView: false,
 };
 
 const authorProfiles = [
@@ -560,6 +561,112 @@ function sampleBook() {
   };
 }
 
+/* ===== 分享功能 ===== */
+
+function encodeBookForShare(book) {
+  try {
+    const minimal = {
+      id: book.id,
+      title: book.title,
+      subtitle: book.subtitle,
+      style: book.style,
+      tags: book.tags,
+      steps: book.steps,
+      createdAt: book.createdAt,
+      preface: book.preface,
+      cover: book.cover || "music",
+      authorCount: book.authorCount,
+    };
+    const json = JSON.stringify(minimal);
+    const bytes = new TextEncoder().encode(json);
+    const bin = String.fromCharCode(...bytes);
+    return btoa(bin);
+  } catch {
+    return null;
+  }
+}
+
+function decodeSharedBook(hash) {
+  try {
+    const prefix = "#book=";
+    if (!hash.startsWith(prefix)) return null;
+    const encoded = hash.slice(prefix.length);
+    const bin = atob(encoded);
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function showToast(message, duration = 2500) {
+  let toast = document.getElementById("feishu-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "feishu-toast";
+    toast.className = "feishu-toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, duration);
+}
+
+async function shareBook(book) {
+  const encoded = encodeBookForShare(book);
+  if (!encoded) {
+    showToast("生成分享链接失败，请重试");
+    return;
+  }
+  const url = `${window.location.origin}${window.location.pathname}#book=${encoded}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast("分享链接已复制到剪贴板，快去分享给朋友吧！");
+  } catch {
+    const input = document.createElement("input");
+    input.value = url;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    document.body.removeChild(input);
+    showToast("分享链接已复制到剪贴板，快去分享给朋友吧！");
+  }
+}
+
+function buildPinContent(book) {
+  const steps = book.steps || [];
+  const toc = steps.slice(0, 5).map((s, i) => `${i + 1}. ${s.title}`).join("\n");
+  const more = steps.length > 5 ? `\n...还有 ${steps.length - 5} 章` : "";
+  const url = `${window.location.origin}${window.location.pathname}#book=${encodeBookForShare(book) || ""}`;
+  return `我在「非书」里读完了一本自己的知识读本：《${book.title}》\n\n${book.preface?.slice(0, 80) || ""}...\n\n目录：\n${toc}${more}\n\n来读我读出的这本非书 → ${url}`;
+}
+
+async function shareToZhihuPin(book) {
+  const content = buildPinContent(book);
+  try {
+    setBusy("正在发布到知乎想法...");
+    const response = await fetch("/api/publish-pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, ringId: "2029619126742656657" }),
+    });
+    const data = await response.json().catch(() => null);
+    clearBusy();
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.message || "发布到知乎失败。");
+    }
+    showToast("已成功发布到知乎黑客松脑洞补给站！");
+  } catch (error) {
+    clearBusy();
+    showToast(error.message || "发布到知乎失败，请检查 API 配置或稍后重试。");
+  }
+}
+
+/* ===== /分享功能 ===== */
+
 function update(partial) {
   const previousView = state.view;
   Object.assign(state, partial);
@@ -582,7 +689,7 @@ function scrollToTop() {
 
 function navigate(view) {
   if (isBusy()) return;
-  update({ view, selectedDirection: null, selectedCandidateIndex: -1, activeBook: null });
+  update({ view, selectedDirection: null, selectedCandidateIndex: -1, activeBook: null, isSharedView: false });
 }
 
 async function startAdventure(event, hotItem = null, mode = 'auto') {
@@ -727,7 +834,6 @@ async function goNext() {
 
   const selectedCandidate = state.candidates[state.selectedCandidateIndex];
 
-  // 先关闭候选弹窗，避免与 thinking modal 重叠
   Object.assign(state, {
     selectedDirection: null,
     selectedCandidateIndex: -1,
@@ -787,6 +893,9 @@ function goNextMockPreview() {
 
 function restart() {
   if (isBusy()) return;
+  if (window.location.hash) {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
   update({
     view: "start",
     currentIndex: 0,
@@ -806,6 +915,7 @@ function restart() {
     startData: null,
     knowledgeCards: [],
     selectedAnchor: null,
+    isSharedView: false,
   });
 }
 
@@ -1598,7 +1708,7 @@ function renderAdventure() {
   });
 }
 
-function renderBook(book = state.activeBook || sampleBook()) {
+function renderBook(book = state.activeBook || sampleBook(), sharedMode = false) {
   const rawAuthors = uniqueAuthors(book.steps);
   const authors = rawAuthors.filter(
     (name) => name && name !== "未知" && name !== "user_text"
@@ -1610,13 +1720,14 @@ function renderBook(book = state.activeBook || sampleBook()) {
   app.innerHTML = `
     <section class="screen book-screen">
       ${nav("library")}
+      ${sharedMode ? `<div class="shared-banner">你正在查看一位朋友分享的非书</div>` : ""}
       <header class="book-detail-hero">
         <div class="detail-cover-wrap">
           ${coverMarkup(book, "large")}
-          <p class="created-at">创建时间：${book.createdAt}</p>
+          <p class="created-at">${sharedMode ? "分享时间" : "创建时间"}：${book.createdAt}</p>
         </div>
         <div class="detail-main">
-          <p class="eyebrow">已保存到我的非书</p>
+          <p class="eyebrow">${sharedMode ? "来自分享的非书" : "已保存到我的非书"}</p>
           <h1>${book.title}</h1>
           <p class="lead">${book.subtitle}</p>
           <div class="tag-row">${book.tags.slice(0, 3).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
@@ -1626,12 +1737,13 @@ function renderBook(book = state.activeBook || sampleBook()) {
             <div class="stat-item"><strong>${book.tags.length}</strong><span>个主题</span></div>
           </div>
           <div class="detail-award">
-            <strong>你完成了一条自己的阅读线索</strong>
-            <p>这些章节不是被动刷到的内容，而是你一步步选择出来的知识路径。</p>
+            <strong>${sharedMode ? "这是一条被分享出来的阅读线索" : "你完成了一条自己的阅读线索"}</strong>
+            <p>${sharedMode ? "这些章节是别人一步步选择出来的知识路径，你也可以从任意文章出发，生成自己的非书。" : "这些章节不是被动刷到的内容，而是你一步步选择出来的知识路径。"}</p>
           </div>
           <div class="hero-actions">
-            <button id="restart-button">再读一本</button>
-            <button class="ghost-button" disabled>分享（即将上线）</button>
+            <button id="restart-button">${sharedMode ? "我也做一本非书" : "再读一本"}</button>
+            <button class="ghost-button" id="share-book-button">${sharedMode ? "复制分享链接" : "分享这本非书"}</button>
+            ${!sharedMode ? `<button class="ghost-button" id="zhihu-pin-button">发布到知乎想法</button>` : ""}
           </div>
         </div>
       </header>
@@ -1677,8 +1789,9 @@ function renderBook(book = state.activeBook || sampleBook()) {
             <span class="authors-count">共 ${finalAuthorCount} 位</span>
           </div>
           <div class="hero-actions centered">
-            <button class="restart-bottom">再读一本</button>
-            <button class="ghost-button" disabled>分享（即将上线）</button>
+            <button class="restart-bottom">${sharedMode ? "我也做一本非书" : "再读一本"}</button>
+            <button class="ghost-button" id="share-bottom-button">${sharedMode ? "复制分享链接" : "分享这本非书"}</button>
+            ${!sharedMode ? `<button class="ghost-button" id="zhihu-pin-bottom-button">发布到知乎想法</button>` : ""}
           </div>
         </section>
       </section>
@@ -1691,6 +1804,22 @@ function renderBook(book = state.activeBook || sampleBook()) {
   };
   document.querySelector("#restart-button")?.addEventListener("click", restartHandler);
   document.querySelector(".restart-bottom")?.addEventListener("click", restartHandler);
+
+  const shareHandler = () => {
+    if (isBusy()) return;
+    shareBook(book);
+  };
+  document.querySelector("#share-book-button")?.addEventListener("click", shareHandler);
+  document.querySelector("#share-bottom-button")?.addEventListener("click", shareHandler);
+
+  if (!sharedMode) {
+    const pinHandler = () => {
+      if (isBusy()) return;
+      shareToZhihuPin(book);
+    };
+    document.querySelector("#zhihu-pin-button")?.addEventListener("click", pinHandler);
+    document.querySelector("#zhihu-pin-bottom-button")?.addEventListener("click", pinHandler);
+  }
 }
 
 function renderLibrary() {
@@ -1760,7 +1889,7 @@ function render() {
   else if (state.view === "start") renderStart();
   else if (state.view === "start-result") renderStartResult();
   else if (state.view === "library") renderLibrary();
-  else if (state.view === "book") renderBook();
+  else if (state.view === "book") renderBook(state.activeBook, state.isSharedView);
   else renderAdventure();
 }
 
@@ -1779,6 +1908,14 @@ function handleUrlParams() {
     startAdventure(null, null, "paramText");
     return true;
   }
+
+  const hash = window.location.hash;
+  const sharedBook = decodeSharedBook(hash);
+  if (sharedBook) {
+    update({ view: "book", activeBook: sharedBook, isSharedView: true });
+    return true;
+  }
+
   return false;
 }
 

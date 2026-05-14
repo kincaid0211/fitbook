@@ -3513,3 +3513,33 @@ h3 {
     width: 100%;
   }
 }
+
+/* ===== 分享功能 ===== */
+.feishu-toast {
+  position: fixed; top: 20px; left: 50%; z-index: 100;
+  transform: translateX(-50%) translateY(-20px);
+  min-height: 44px; border: 1px solid #bde8df;
+  border-radius: 999px; background: var(--green-soft);
+  color: var(--green); padding: 10px 22px;
+  font-size: 14px; font-weight: 800; opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease, transform 300ms ease;
+  box-shadow: 0 14px 30px rgba(15, 143, 122, 0.14);
+}
+.feishu-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.shared-banner {
+  margin-bottom: 18px;
+  border: 1px solid #bde8df;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(233,247,244,0.84));
+  padding: 14px 18px;
+  box-shadow: var(--shadow-soft);
+}
+.shared-banner p {
+  margin: 0;
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.6;
+}
