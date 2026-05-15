@@ -3452,6 +3452,73 @@ h3 {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ===== 探险页底部装订提示条 ===== */
+.adventure-footer-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(210, 224, 244, 0.92);
+  background: rgba(255, 255, 255, 0.94);
+  padding: 12px 22px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 -10px 30px rgba(17, 49, 96, 0.08);
+}
+.footer-bar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: min(980px, 100%);
+}
+.footer-bar-content p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 850;
+}
+.footer-bar-actions {
+  display: flex;
+  gap: 10px;
+}
+.adventure-footer-bar button {
+  padding: 0 22px;
+  font-size: 15px;
+}
+/* 进度标签可点击 */
+.book-ready {
+  cursor: pointer;
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+}
+.book-ready:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 102, 255, 0.18);
+}
+/* 探险页底部留出固定条空间 */
+.screen.adventure-screen {
+  padding-bottom: 90px;
+}
+@media (max-width: 720px) {
+  .adventure-footer-bar {
+    padding: 10px 14px;
+  }
+  .footer-bar-content {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .footer-bar-actions {
+    width: 100%;
+  }
+  .footer-bar-actions button {
+    flex: 1;
+    width: 100%;
+  }
+}
 </style>
   </head>
   <body>
